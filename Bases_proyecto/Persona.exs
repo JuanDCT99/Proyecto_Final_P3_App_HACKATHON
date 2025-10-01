@@ -1,51 +1,27 @@
 #Logica del registro de personas
 
 defmodule Persona do
-
-
-  def llamar_persona do
-    nombre = pedir_nombre()
-    identificacion = pedir_identificacion()
-    edad = pedir_edad()
-    correo = pedir_correo()
-    telefono = pedir_telefono()
-    registrar_persona(nombre, identificacion, edad, correo, telefono)
-  end
-
-  def pedir_nombre do
-    Funcional.input("Ingrese su nombre: ", :string)
-  end
-
-  def pedir_identificacion do
-    Funcional.input("Ingrese su identificacion: ", :string)
-  end
-
-  def pedir_edad do
-    Funcional.input("Ingrese su edad: ", :integer)
-  end
-
-  def pedir_correo do
-    Funcional.input("Ingrese su correo: ", :string)
-  end
-
-  def pedir_telefono do
-    Funcional.input("Ingrese su telefono: ", :string)
-  end
-
-  def registrar_persona(nombre, identificacion, edad, correo, telefono) do
-    Funcional.mostrar_mensaje("Se ha registrado la persona con los siguientes datos:")
-    Funcional.mostrar_mensaje("\nNombre: #{nombre}, \n
-                              Identificacion: #{identificacion}, \n
-                              Edad: #{edad}, \n
-                              Correo: #{correo}, \n
-                              elefono: #{telefono}")
-  end
-
-  def registrar_persona(_, _, _, _, _) do
-    Funcional.mostrar_mensaje("Error: No se pudo registrar la persona. Inténtalo de nuevo.")
-  end
-
-
+  defstruct nombre: "", identificacion: 0, edad: 0, correo: "", telefono: 0
 end
 
-Persona.llamar_persona()
+  defmodule Main do
+    def registrar_persona do
+      Util.show_message("Registro de persona")
+
+      nombre = Util.input("Ingrese el nombre:", :string)
+      identificacion = Util.input("Ingrese su identificacion", :integer)
+      edad = Util.input("Ingrese su edad", :integer)
+      correo = Util.input("Ingrese su correo", :string)
+      telefono = Util.input("Ingrese su telefono", :integer)
+
+      persona = %Persona{nombre: nombre, identificacion: identificacion, edad: edad, correo: correo, telefono: telefono}
+
+      Util.show_message("La persona ha sido registrada exitosamente")
+      IO.inspect(persona, label: "Persona")
+      persona
+
+    end
+  end
+
+
+Main.registrar_persona()
