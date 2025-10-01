@@ -1,4 +1,3 @@
-#Logica del registro de personas
 
 #Logica del registro de personas
 
