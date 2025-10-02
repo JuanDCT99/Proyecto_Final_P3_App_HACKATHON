@@ -35,10 +35,10 @@ defmodule Persona do
   def registrar_persona(nombre, identificacion, edad, correo, telefono) do
     Funcional.mostrar_mensaje("Se ha registrado la persona con los siguientes datos:")
     Funcional.mostrar_mensaje("\nNombre: #{nombre}, \n
-                              Identificacion: #{identificacion}, \n
-                              Edad: #{edad}, \n
-                              Correo: #{correo}, \n
-                              elefono: #{telefono}")
+                            Identificacion: #{identificacion}, \n
+                            Edad: #{edad}, \n
+                            Correo: #{correo}, \n
+                            elefono: #{telefono}")
   end
 
   def registrar_persona(_, _, _, _, _) do
