@@ -1,44 +1,54 @@
-#Definicion de las funciones empleadas para este trabajo de seguimiento
-defmodule Funcional do
-
-  def mostrar_mensaje(mensaje) do
-    System.cmd("java", ["-cp", ".", "Mensaje", mensaje])
+defmodule Util do
+  # Muestra un mensaje a través de Java
+  def show_message(message) when is_binary(message) do
+    System.cmd("java", ["-cp", ".", "Mensaje", message])
   end
 
-  def input(mensaje, :string) do
-    {output, _} = System.cmd("java", ["-cp", ".", "Mensaje", "input", mensaje])
-    String.trim(output)
+  # Lee texto (string) desde Java
+  def input(message, :string) when is_binary(message) do
+    {output, _exit_code} =
+      System.cmd("java", ["-cp", ".", "Mensaje", "input", message, ":string"])
+
+    output |> String.trim()
   end
 
-  def input(mensaje, :integer) do
+  # Lee entero con reintento si el usuario se equivoca
+  def input(message, :integer) when is_binary(message) do
     try do
-      (
-        {output, _} = System.cmd("java", ["-cp", ".", "Mensaje", "input", mensaje])
-        String.trim(output)
-        |> String.to_integer()
-      )
+      message
+      |> input(:string)
+      |> String.trim()
+      |> String.to_integer()
     rescue
       ArgumentError ->
-        IO.puts("Error: El valor ingresado no es un número entero. Inténtalo de nuevo.")
-        input(mensaje, :integer)
+        show_message("Error: Debe ingresar un entero válido.")
+        input(message, :integer)
     end
   end
 
-  def input(mensaje, :float) do
+  # Lee flotante con reintento si el usuario se equivoca
+  def input(message, :float) when is_binary(message) do
     try do
-      (
-        {output, _} = System.cmd("java", ["-cp", ".", "Mensaje", "input", mensaje])
-        String.trim(output)
-        |> String.to_float()
-      )
+      message
+      |> input(:string)
+      |> String.trim()
+      |> String.to_float()
     rescue
       ArgumentError ->
-        IO.puts("Error: El valor ingresado no es un número en formato valido. Inténtalo de nuevo.")
-        input(mensaje, :float)
+        show_message("Error: Debe ingresar un número real válido (use punto decimal).")
+        input(message, :float)
     end
   end
 
-  def pedir_informacion() do
-    input("Ingrese su nombre: ", :string)
+  # Guardas de error para el primer argumento no binario
+  def input(message, _type) when not is_binary(message) do
+    raise ArgumentError, "El mensaje debe ser una cadena de texto"
   end
+
+  # Guardas de error para tipos no soportados
+  def input(_message, type) do
+    raise ArgumentError,
+          "Tipo no soportado: #{inspect(type)}. Use :string, :integer, o :float"
+  end
+
 end
