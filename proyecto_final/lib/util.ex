@@ -1,4 +1,4 @@
-defmodule Util do
+defmodule Funcional do
   # Muestra un mensaje a través de Java
   def show_message(message) when is_binary(message) do
     System.cmd("java", ["-cp", ".", "Mensaje", message])
