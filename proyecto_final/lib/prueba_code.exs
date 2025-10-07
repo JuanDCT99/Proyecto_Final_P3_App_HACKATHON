@@ -26,9 +26,16 @@ defmodule PruebaCode do
     equipos_leidos = Equipo.leer_csv("equipos.csv")
     IO.inspect(personas_leidas)
     IO.inspect(equipos_leidos)
+
+    proyecto1 = Proyectos_Hackathon.crear_Proyecto()
+    proyecto2 = Proyectos_Hackathon.crear_Proyecto()
+    lista_proyectos = [proyecto1, proyecto2]
+    IO.inspect(lista_proyectos, label: "Proyectos creados")
+    Proyectos_Hackathon.escrivir_csv(lista_proyectos, "proyectos.csv")
+    proyectos_leidos = Proyectos_Hackathon.leer_csv("proyectos.csv")
+    IO.inspect(proyectos_leidos, label: "Proyectos leídos")
   end
 
 end
 
 PruebaCode.prueba()
-
