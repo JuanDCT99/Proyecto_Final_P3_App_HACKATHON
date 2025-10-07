@@ -4,7 +4,12 @@ defmodule Persona do
   defstruct nombre: "", identificacion: 0, edad: 0, correo: "", telefono: 0
 end
 
+defmodule Equipo do
+  defstruct nombre: "", participantes: [], activo: true
+end
+
   defmodule Main do
+
     def registrar_persona do
       Util.show_message("Registro de persona")
 
@@ -20,6 +25,31 @@ end
       IO.inspect(persona, label: "Persona")
       persona
 
+    end
+
+    def GestorEquipos do
+      Util.show_message("Menu Principal")
+      Util.show_message("1. /teams Listar equipos")
+      Util.show_message("2. crear nuevo equipo")
+      Util.show_message("3. /Join equipo - unirse")
+      Util.show_message("4. Salir")
+
+      opcion = Util.input("seleccione una opción:", :integer)
+
+      case opcion do
+
+      end
+    end
+
+    def crear_equipo do
+      Util.show_message("Crear nuevo equipo")
+      nombre_equipo = Util.input("Ingresa el nombre del equipo:", :String)
+
+      %Equipo{
+        nombre: nombre_equipo,
+        participantes: [],
+        activo: true
+      }
     end
   end
 
