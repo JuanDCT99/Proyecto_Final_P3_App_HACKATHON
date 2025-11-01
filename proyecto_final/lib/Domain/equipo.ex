@@ -1,6 +1,7 @@
 #Logica para la creación de equipos
 
-defmodule Equipo do
+defmodule ProyectoFinal.Domain.Equipo do
+  alias ProyectoFinal.Services.Util, as: Funcional
 
   defstruct nombre: "", groupID: "", integrantes: []
 
@@ -15,7 +16,7 @@ defmodule Equipo do
   end
 
   def crear(nombre, groupID, integrantes) do
-    %Equipo{nombre: nombre, groupID: groupID, integrantes: integrantes}
+    %__MODULE__{nombre: nombre, groupID: groupID, integrantes: integrantes}
   end
 
   def escribir_csv(lista_equipos, nombre_archivo) do
@@ -23,7 +24,7 @@ defmodule Equipo do
 
     contenido =
       Enum.map(lista_equipos,
-        fn %Equipo{nombre: nombre, groupID: groupID, integrantes: integrantes} ->
+        fn %__MODULE__{nombre: nombre, groupID: groupID, integrantes: integrantes} ->
           "#{nombre},#{groupID},#{Enum.join(integrantes, ";")}\n"
         end)
       |> Enum.join()
@@ -33,12 +34,14 @@ defmodule Equipo do
   def leer_csv(nombre_archivo) do
     case File.read(nombre_archivo) do
       {:ok, contenido} ->
-        String.split(contenido, "\n")
+        contenido
+        |> String.split("\n", trim: true)
+        |> Enum.drop(1)
         |> Enum.map(fn linea ->
           case String.split(linea, ",") do
-            [nombre, groupID, integrantes] when is_binary(nombre) and is_binary(groupID) and is_binary(integrantes) ->
+            [nombre, groupID, integrantes]->
               integrantes_lista = String.split(integrantes, ";") |> Enum.map(&String.trim/1)
-              %Equipo{nombre: String.trim(nombre), groupID: String.trim(groupID), integrantes: integrantes_lista}
+              %__MODULE__{nombre: String.trim(nombre), groupID: String.trim(groupID), integrantes: integrantes_lista}
             _ -> nil
           end
 

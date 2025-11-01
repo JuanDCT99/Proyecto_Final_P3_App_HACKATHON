@@ -1,5 +1,5 @@
 #Definicion de las funciones empleadas para este trabajo de seguimiento
-defmodule Funcional do
+defmodule ProyectoFinal.Services.Util do
 
   def mostrar_mensaje(mensaje) do
     System.cmd("java", ["-cp", ".", "Mensaje", mensaje])
