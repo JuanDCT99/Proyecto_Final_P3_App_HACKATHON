@@ -1,6 +1,7 @@
 #Logica para la creación de proyectos
 
-defmodule Proyectos_Hackathon do
+defmodule ProyectoFinal.Domain.Proyectos_Hackaton do
+  alias ProyectoFinal.Services.Util, as: Funcional
 
   defstruct nombre: "", descripcion: "", categoria: "", estado: "", integrantes: [], avances: []
 
@@ -13,15 +14,15 @@ defmodule Proyectos_Hackathon do
   end
 
   def crear(nombre, descripcion, categoria, estado, integrantes, avances) do
-    %Proyectos_Hackathon{nombre: nombre, descripcion: descripcion, categoria: categoria, estado: estado, integrantes: integrantes, avances: avances}
+    %__MODULE__{nombre: nombre, descripcion: descripcion, categoria: categoria, estado: estado, integrantes: integrantes, avances: avances}
   end
 
-  def escrivir_csv(lista_proyectos, nombre_archivo) do
+  def escribir_csv(lista_proyectos, nombre_archivo) do
     encabezados = "Nombre,Descripción,Categoría,Estado,Integrantes,Avances\n"
 
     contenido =
       Enum.map(lista_proyectos,
-        fn %Proyectos_Hackathon{nombre: nombre, descripcion: descripcion, categoria: categoria, estado: estado, integrantes: integrantes, avances: avances} ->
+        fn %__MODULE__{nombre: nombre, descripcion: descripcion, categoria: categoria, estado: estado, integrantes: integrantes, avances: avances} ->
           "#{nombre},#{descripcion},#{categoria},#{estado},#{integrantes |> Enum.join(";")},#{avances |> Enum.join(";")}\n"
       end)
       |> Enum.join("")
@@ -38,7 +39,7 @@ defmodule Proyectos_Hackathon do
             [nombre, descripcion, categoria, estado, integrantes_str, avances_str] ->
               integrantes = String.split(integrantes_str, ";")
               avances = String.split(avances_str, ";")
-              %Proyectos_Hackathon{
+              %__MODULE__{
                 nombre: nombre,
                 descripcion: descripcion,
                 categoria: categoria,

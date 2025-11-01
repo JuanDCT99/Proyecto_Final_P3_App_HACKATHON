@@ -1,8 +1,10 @@
 #Logica para la creacion de personas
 
-defmodule Persona do
+defmodule ProyectoFinal.Domain.Persona do
+  alias ProyectoFinal.Services.Util, as: Funcional
 
   defstruct nombre: "", identificacion: "", edad: "", equipo: ""
+
 
 
   def crear_Usuario() do
@@ -14,14 +16,14 @@ defmodule Persona do
   end
 
   def crear(nombre, identificacion, edad, equipo) do
-    %Persona{nombre: nombre, identificacion: identificacion, edad: edad, equipo: equipo}
+    %__MODULE__{nombre: nombre, identificacion: identificacion, edad: edad, equipo: equipo}
   end
 
   def escribir_csv(lista_personas, nombre_archivo) do
     encabezado = "Nombre, Identificacion, Edad, Equipo\n"
     contenido =
       Enum.map(lista_personas,
-        fn %Persona{nombre: nombre, identificacion: identificacion, edad: edad, equipo: equipo} ->
+        fn %__MODULE__{nombre: nombre, identificacion: identificacion, edad: edad, equipo: equipo} ->
           "#{nombre},#{identificacion},#{edad},#{equipo}\n"
       end)
       |> Enum.join("")
@@ -31,11 +33,14 @@ defmodule Persona do
   def leer_csv(nombre_archivo) do
     case File.read(nombre_archivo) do
       {:ok, contenido} ->
-        String.split(contenido, "\n")
+        contenido
+        |> String.split("\n", trim: true)
+        |> Enum.drop(1)
         |> Enum.map(fn linea ->
+
           case String.split(linea, ",") do
-            [nombre, identificacion, edad, equipo] when is_binary(nombre) and is_binary(identificacion) and is_binary(edad) and is_binary(equipo) ->
-              %Persona{nombre: String.trim(nombre), identificacion: String.trim(identificacion), edad: String.trim(edad), equipo: String.trim(equipo)}
+            [nombre, identificacion, edad, equipo] ->
+              %__MODULE__{nombre: String.trim(nombre), identificacion: String.trim(identificacion), edad: String.trim(edad), equipo: String.trim(equipo)}
             _ -> nil
           end
         end)
