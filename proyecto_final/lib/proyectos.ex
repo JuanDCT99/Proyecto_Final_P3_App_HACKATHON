@@ -16,5 +16,7 @@ defmodule Proyectos_Hackathon do
     %Proyectos_Hackathon{nombre: nombre, descripcion: descripcion, categoria: categoria, estado: estado, integrantes: integrantes, avances: avances}
   end
 
-  def 
+  def actualizar_avance do
+    
+  end
 end
