@@ -1,63 +1,58 @@
-defmodule ProyectoFinal.Test.EquipoTest do
+defmodule ProyectoFinal.Test.MentorTest do
   use ExUnit.Case
-  alias ProyectoFinal.Domain.Equipo
+  alias ProyectoFinal.Domain.Mentor
   import ExUnit.CaptureIO
 
-  # Módulo mock para las dependencias
   defmodule MockCSVAdapter do
     def write(_nombre_archivo, _header, _rows), do: :ok
 
-    def read("equipos_validos.csv") do
-      {:ok, {
-        ["Nombre del Equipo", "Numero de Grupo", "Lista de Integrantes"],
+    def read ("mentores.csv") do
+      {:ok,  {
+        ["Nombre", "Identificacion", "Celular", "Edad", "Equipo"],
         [
-          ["Equipo Alpha", "G001", "Juan;María;Pedro"],
-          ["Equipo Beta", "G002", "Ana;Luis"]
+          [],
+          []
         ]
-      }}
+      }
+    }
     end
 
-    def read("archivo_invalido.csv") do
+  def read("archivo_invalido.csv") do
       {:error, :enoent}
-    end
+  end
   end
 
-  describe "crear/3" do
-    test "crea un equipo con los datos proporcionados" do
-      equipo = Equipo.crear("Los Tigres", "G123", ["Juan", "María"])
+  describe "crear/5" do
+    test "Crea un mentor con los datos proporcionados" do
+      mentor = Mentor.crear("Jhan Carlos", "10921091", "3145672134", "24", "Ingenieria FC")
 
-      assert equipo.nombre == "Los Tigres"
-      assert equipo.groupID == "G123"
-      assert equipo.integrantes == ["Juan", "María"]
+      assert mentor.nombre == "Jhan Carlos"
+      assert mentor.identificacion == "10921091"
+      assert mentor.celular == "3145672134"
+      assert mentor.edad == "24"
+      assert mentor.equipo == "Ingenieria FC"
     end
 
-    test "crea un equipo con lista de integrantes vacía" do
-      equipo = Equipo.crear("Equipo Nuevo", "G456", [])
+    test "el mentor creado es una estructura valida" do
+      mentor = Mentor.crear("Test", "T001", "T002", "T003", "T0004")
 
-      assert equipo.nombre == "Equipo Nuevo"
-      assert equipo.groupID == "G456"
-      assert equipo.integrantes == []
-    end
-
-    test "el equipo creado es una estructura válida" do
-      equipo = Equipo.crear("Test", "T001", [])
-
-      assert %Equipo{} = equipo
+      assert %Mentor{} = mentor
     end
   end
 
   describe "escribir_csv/2" do
     setup do
-      # Preparar datos de prueba
-      equipos = [
-        Equipo.crear("Equipo A", "G001", ["Juan", "Pedro"]),
-        Equipo.crear("Equipo B", "G002", ["Ana", "Luis", "María"])
+
+      mentores = [
+        Mentor.crear("Julian", "10291029", "31442281", "23", "Leones FC"),
+        Mentor.crear("Jeison", "12801920", "31121192", "32", "Aguilas FC")
       ]
 
-      {:ok, equipos: equipos}
+      {:ok, mentores: mentores}
     end
+  end
 
-    test "escribe equipos en formato CSV correctamente", %{equipos: equipos} do
+   test "escribe equipos en formato CSV correctamente", %{equipos: equipos} do
       # Mock del CSVAdapter
       Application.put_env(:proyecto_final, :csv_adapter, MockCSVAdapter)
 
@@ -221,4 +216,4 @@ defmodule ProyectoFinal.Test.EquipoTest do
       assert equipo_actualizado.groupID == ""
     end
   end
-end
+
