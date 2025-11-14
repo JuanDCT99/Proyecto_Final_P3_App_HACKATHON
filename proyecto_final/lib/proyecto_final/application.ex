@@ -10,6 +10,7 @@ defmodule ProyectoFinal.Application do
     children = [
       # Starts a worker by calling: ProyectoFinal.Worker.start_link(arg)
       # {ProyectoFinal.Worker, arg}
+      {ProyectoFinal.Chat.Server, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -6,7 +6,7 @@ defmodule ProyectoFinal.Domain.Proyectos_Hackaton do
   defstruct nombre: "", descripcion: "", categoria: "", estado: "", integrantes: [], avances: []
 
   def crear_Proyecto() do
-    nombre = Funcional.input("Ingrese el nombre del proyecto: ", :string)
+    nombre = Funcional.input("Ingrese el nombre del equipo al cual se le asignara el proyecto: ", :string)
     descripcion = Funcional.input("Ingrese la descripcion del proyecto: ", :string)
     categoria = Funcional.input("Ingrese la categoria del proyecto: ", :string)
     estado = Funcional.input("Ingrese el estado del proyecto (En desarrollo/Finalizado): ", :string)
