@@ -20,31 +20,21 @@ defmodule ProyectoFinal.Domain.Equipo do
   end
 
   def escribir_csv(lista_equipos, nombre_archivo) do
-    encabezado = "Nombre del Equipo, Numero de Grupo, Lista de Integrantes\n"
-
-    contenido =
-      Enum.map(lista_equipos,
-        fn %__MODULE__{nombre: nombre, groupID: groupID, integrantes: integrantes} ->
-          "#{nombre},#{groupID},#{Enum.join(integrantes, ";")}\n"
-        end)
-      |> Enum.join()
-    File.write!(nombre_archivo, encabezado <> contenido)
+    header = ["Nombre del Equipo", "Numero de Grupo", "Lista de Integrantes"]
+    rows = Enum.map(lista_equipos, fn %__MODULE__{nombre: nombre, groupID: groupID, integrantes: integrantes} ->
+      [nombre, groupID, Enum.join(integrantes, ";")]
+    end)
+    Adapters.CSVAdapter.write(nombre_archivo, header, rows)
   end
 
   def leer_csv(nombre_archivo) do
-    case File.read(nombre_archivo) do
-      {:ok, contenido} ->
-        contenido
-        |> String.split("\n", trim: true)
-        |> Enum.drop(1)
-        |> Enum.map(fn linea ->
-          case String.split(linea, ",") do
-            [nombre, groupID, integrantes]->
-              integrantes_lista = String.split(integrantes, ";") |> Enum.map(&String.trim/1)
-              %__MODULE__{nombre: String.trim(nombre), groupID: String.trim(groupID), integrantes: integrantes_lista}
-            _ -> nil
-          end
-
+    case Adapters.CSVAdapter.read(nombre_archivo) do
+      {:ok, {_header, rows}} ->
+        Enum.map(rows, fn
+          [nombre, groupID, integrantes] ->
+            integrantes_lista = String.split(integrantes, ";") |> Enum.map(&String.trim/1)
+            %__MODULE__{nombre: String.trim(nombre), groupID: String.trim(groupID), integrantes: integrantes_lista}
+          _ -> nil
         end)
         |> Enum.reject(&is_nil/1)
       {:error, _reason} ->

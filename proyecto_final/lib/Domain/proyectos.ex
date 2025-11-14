@@ -18,41 +18,31 @@ defmodule ProyectoFinal.Domain.Proyectos_Hackaton do
   end
 
   def escribir_csv(lista_proyectos, nombre_archivo) do
-    encabezados = "Nombre,Descripción,Categoría,Estado,Integrantes,Avances\n"
-
-    contenido =
-      Enum.map(lista_proyectos,
-        fn %__MODULE__{nombre: nombre, descripcion: descripcion, categoria: categoria, estado: estado, integrantes: integrantes, avances: avances} ->
-          "#{nombre},#{descripcion},#{categoria},#{estado},#{integrantes |> Enum.join(";")},#{avances |> Enum.join(";")}\n"
-      end)
-      |> Enum.join("")
-    File.write!(nombre_archivo, encabezados <> contenido)
+    header = ["Nombre", "Descripción", "Categoría", "Estado", "Integrantes", "Avances"]
+    rows = Enum.map(lista_proyectos, fn %__MODULE__{nombre: nombre, descripcion: descripcion, categoria: categoria, estado: estado, integrantes: integrantes, avances: avances} ->
+      [nombre, descripcion, categoria, estado, Enum.join(integrantes, ";"), Enum.join(avances, ";")]
+    end)
+    Adapters.CSVAdapter.write(nombre_archivo, header, rows)
   end
 
   def leer_csv(nombre_archivo) do
-    case File.read(nombre_archivo) do
-      {:ok, contenido} ->
-        String.split(contenido, "\n", trim: true)
-        |> Enum.drop(1) # Omitir la línea de encabezados
-        |> Enum.map(fn linea ->
-          case String.split(linea, ",") do
-            [nombre, descripcion, categoria, estado, integrantes_str, avances_str] ->
-              integrantes = String.split(integrantes_str, ";")
-              avances = String.split(avances_str, ";")
-              %__MODULE__{
-                nombre: nombre,
-                descripcion: descripcion,
-                categoria: categoria,
-                estado: estado,
-                integrantes: integrantes,
-                avances: avances
-              }
-            _ ->
-              nil
-          end
+    case Adapters.CSVAdapter.read(nombre_archivo) do
+      {:ok, {_header, rows}} ->
+        Enum.map(rows, fn
+          [nombre, descripcion, categoria, estado, integrantes_str, avances_str] ->
+            integrantes = String.split(integrantes_str, ";") |> Enum.map(&String.trim/1)
+            avances = String.split(avances_str, ";") |> Enum.map(&String.trim/1)
+            %__MODULE__{
+              nombre: String.trim(nombre),
+              descripcion: String.trim(descripcion),
+              categoria: String.trim(categoria),
+              estado: String.trim(estado),
+              integrantes: integrantes,
+              avances: avances
+            }
+          _ -> nil
         end)
         |> Enum.reject(&is_nil/1)
-
       {:error, _reason} ->
         IO.puts("Error al leer el archivo #{nombre_archivo}")
         []
