@@ -43,17 +43,16 @@ defmodule ProyectoFinal.Services.Util do
   end
 
 
-  # FUNCIONES AÑADIDAS PARA CONSULTAR PROYECTOS
+  #   FUNCIONES PARA CONSULTAR PROYECTOS
 
 
-  # Lee proyectos desde priv/proyectos.csv
   def leer_proyectos() do
     path = "priv/proyectos.csv"
 
     path
     |> File.read!()
     |> String.split("\n", trim: true)
-    |> Enum.drop(1) # Quita encabezado
+    |> Enum.drop(1)
     |> Enum.map(fn linea ->
       [nombre, descripcion, categoria, estado, integrantes, avances] =
         String.split(linea, ",", parts: 6)
@@ -69,7 +68,6 @@ defmodule ProyectoFinal.Services.Util do
     end)
   end
 
-  # CONSULTAR PROYECTOS POR ESTADO
   def consultar_proyectos_por_estado(estado_buscado) do
     leer_proyectos()
     |> Enum.filter(fn proyecto ->
@@ -77,11 +75,45 @@ defmodule ProyectoFinal.Services.Util do
     end)
   end
 
-  # CONSULTAR PROYECTOS POR CATEGORÍA
   def consultar_proyectos_por_categoria(categoria_buscada) do
     leer_proyectos()
     |> Enum.filter(fn proyecto ->
       String.downcase(proyecto.categoria) == String.downcase(categoria_buscada)
     end)
   end
+
+
+
+  #   CREACIÓN DE "EQUIPOS POR AFINIDAD"
+  #   Agrupa proyectos según su categoría
+
+  def crear_equipos_por_afinidad() do
+    leer_proyectos()
+    |> Enum.group_by(fn proyecto ->
+      proyecto.categoria
+    end)
+  end
+
+  #   NUEVO: MOSTRAR RESULTADO EN CONSOLA
+
+
+  def mostrar_equipos_por_afinidad() do
+    grupos = crear_equipos_por_afinidad()
+
+    IO.puts("\n=== EQUIPOS AGRUPADOS POR AFINIDAD (CATEGORÍA) ===\n")
+
+    Enum.each(grupos, fn {categoria, proyectos} ->
+      IO.puts("Categoría: #{categoria}")
+      IO.puts("Equipos relacionados:")
+
+      Enum.each(proyectos, fn p ->
+        IO.puts("  - #{p.nombre}: #{p.descripcion} (#{p.estado})")
+      end)
+
+      IO.puts("")
+    end)
+
+    :ok
+  end
+
 end
