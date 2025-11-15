@@ -1,5 +1,4 @@
-Nombre del Equipo,Numero de Grupo,Lista de Integrantes
-Equipo_001,001,Juanchito;
-Equipo_001,001,Juanchito;
-Equipo_002,002,Camilo;
-Equipo_003,003,Erwin;
+Nombre,Descripción,Categoría,Estado,Integrantes,Avances
+Proyecto_001,App de chat,Comunicación,En desarrollo,Equipo_001,
+Proyecto_002,Videojuego Shooter,Entretenimiento,Finalizado,Equipo_002,
+Proyecto_003,Red Social,Comunicación,En desarrollo,Equipo_003,
