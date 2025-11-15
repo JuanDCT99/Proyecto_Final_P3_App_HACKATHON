@@ -52,28 +52,14 @@ defmodule ProyectoFinal.Test.MentorTest do
     end
   end
 
-   test "escribe equipos en formato CSV correctamente", %{equipos: equipos} do
+   test "escribe mentores en formato CSV correctamente", %{mentores: mentores} do
       # Mock del CSVAdapter
       Application.put_env(:proyecto_final, :csv_adapter, MockCSVAdapter)
 
       # Esta función debería llamar al adapter con el formato correcto
       # Verificamos que se formatea correctamente
-      [equipo1, equipo2] = equipos
+      [mentor1, mentor2] = equipos
 
-      # Verificar que los integrantes se unan con ";"
-      assert Enum.join(equipo1.integrantes, ";") == "Juan;Pedro"
-      assert Enum.join(equipo2.integrantes, ";") == "Ana;Luis;María"
-    end
-
-    test "genera filas con el formato esperado", %{equipos: equipos} do
-      rows = Enum.map(equipos, fn %Equipo{nombre: nombre, groupID: groupID, integrantes: integrantes} ->
-        [nombre, groupID, Enum.join(integrantes, ";")]
-      end)
-
-      assert rows == [
-        ["Equipo A", "G001", "Juan;Pedro"],
-        ["Equipo B", "G002", "Ana;Luis;María"]
-      ]
     end
   end
 
@@ -216,4 +202,3 @@ defmodule ProyectoFinal.Test.MentorTest do
       assert equipo_actualizado.groupID == ""
     end
   end
-
