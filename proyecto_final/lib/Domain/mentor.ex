@@ -1,3 +1,5 @@
+Mentor.ex
+
 #Logica de mentores
 
 defmodule ProyectoFinal.Domain.Mentor do
@@ -27,12 +29,12 @@ defmodule ProyectoFinal.Domain.Mentor do
 
 
   def crear(nombre, identificacion, especialidad, celular, edad, equipo) do
-    %__MODULE__{nombre: nombre, identificacion: identificacion, especialidad: especialidad, celular: celular, edad: edad, equipo: equipo}
+    %_MODULE_{nombre: nombre, identificacion: identificacion, especialidad: especialidad, celular: celular, edad: edad, equipo: equipo}
   end
 
   def escribir_csv(lista_mentores, nombre_archivo) do
     header = ["Nombre", "Identificacion", "Especialidad", "Celular", "Edad", "Equipo"]
-    rows = Enum.map(lista_mentores, fn %__MODULE__{nombre: nombre, identificacion: identificacion, especialidad: especialidad, celular: celular, edad: edad, equipo: equipo} ->
+    rows = Enum.map(lista_mentores, fn %_MODULE_{nombre: nombre, identificacion: identificacion, especialidad: especialidad, celular: celular, edad: edad, equipo: equipo} ->
       [nombre, identificacion, especialidad, celular, edad, equipo]
     end)
     Adapters.CSVAdapter.write(nombre_archivo, header, rows)
@@ -43,7 +45,7 @@ defmodule ProyectoFinal.Domain.Mentor do
       {:ok, {_header, rows}} ->
         Enum.map(rows, fn
           [nombre, identificacion, especialidad, celular, edad, equipo] ->
-            %__MODULE__{
+            %_MODULE_{
               nombre: String.trim(nombre),
               identificacion: String.trim(identificacion),
               especialidad: String.trim(especialidad),
