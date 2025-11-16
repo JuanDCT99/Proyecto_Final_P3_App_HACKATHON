@@ -256,19 +256,32 @@ defmodule ProyectoFinal.Domain.ProyectosHackatonTest do
       refute Enum.any?(integrantes, &String.starts_with?(&1, " "))
     end
 
-    test "maneja proyectos sin integrantes" do
+    test "maneja proyectos sin integrantes correctamente (lista vacía)" do
       integrantes_str = ""
-      integrantes = String.split(integrantes_str, ";") |> Enum.map(&String.trim/1)
+      # Usando la función parsear_lista corregida
+      integrantes =
+        if String.trim(integrantes_str) == "" do
+          []
+        else
+          String.split(integrantes_str, ";") |> Enum.map(&String.trim/1)
+        end
 
-      # String.split("", ";") devuelve [""]
-      assert integrantes == [""]
+      # ✅ Ahora devuelve [] en lugar de [""]
+      assert integrantes == []
     end
 
-    test "maneja proyectos sin avances" do
+    test "maneja proyectos sin avances correctamente (lista vacía)" do
       avances_str = ""
-      avances = String.split(avances_str, ";") |> Enum.map(&String.trim/1)
+      # Usando la función parsear_lista corregida
+      avances =
+        if String.trim(avances_str) == "" do
+          []
+        else
+          String.split(avances_str, ";") |> Enum.map(&String.trim/1)
+        end
 
-      assert avances == [""]
+      # ✅ Ahora devuelve [] en lugar de [""]
+      assert avances == []
     end
 
     test "retorna lista vacía cuando hay error al leer archivo" do

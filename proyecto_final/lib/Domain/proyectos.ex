@@ -25,21 +25,34 @@ defmodule ProyectoFinal.Domain.Proyectos_Hackaton do
     Adapters.CSVAdapter.write(nombre_archivo, header, rows)
   end
 
-  def leer_csv(nombre_archivo) do
-    case Adapters.CSVAdapter.read(nombre_archivo) do
-      {:ok, {_header, rows}} ->
-        Enum.map(rows, fn
-          [nombre, descripcion, categoria, estado, integrantes_str, avances_str] ->
-            integrantes = String.split(integrantes_str, ";") |> Enum.map(&String.trim/1)
-            avances = String.split(avances_str, ";") |> Enum.map(&String.trim/1)
-            %__MODULE__{
-              nombre: String.trim(nombre),
-              descripcion: String.trim(descripcion),
-              categoria: String.trim(categoria),
-              estado: String.trim(estado),
-              integrantes: integrantes,
-              avances: avances
-            }
+ def leer_csv(nombre_archivo) do
+  case Adapters.CSVAdapter.read(nombre_archivo) do
+    {:ok, {_header, rows}} ->
+      Enum.map(rows, fn
+        [nombre, descripcion, categoria, estado, integrantes_str, avances_str] ->
+          # ✅ SOLUCIÓN: Verificar si el string está vacío antes de hacer split
+          integrantes =
+            if String.trim(integrantes_str) == "" do
+              []
+            else
+              String.split(integrantes_str, ";") |> Enum.map(&String.trim/1)
+            end
+
+          avances =
+            if String.trim(avances_str) == "" do
+              []
+            else
+              String.split(avances_str, ";") |> Enum.map(&String.trim/1)
+            end
+
+          %__MODULE__{
+            nombre: String.trim(nombre),
+            descripcion: String.trim(descripcion),
+            categoria: String.trim(categoria),
+            estado: String.trim(estado),
+            integrantes: integrantes,
+            avances: avances
+          }
           _ -> nil
         end)
         |> Enum.reject(&is_nil/1)
