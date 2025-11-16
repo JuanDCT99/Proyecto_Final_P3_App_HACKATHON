@@ -94,7 +94,7 @@ defmodule ProyectoFinal.Services.Util do
     end)
   end
 
-  #   NUEVO: MOSTRAR RESULTADO EN CONSOLA
+  #   MOSTRAR RESULTADO EN CONSOLA
 
 
   def mostrar_equipos_por_afinidad() do
