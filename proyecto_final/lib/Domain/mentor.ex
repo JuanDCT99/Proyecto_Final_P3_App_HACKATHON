@@ -33,7 +33,7 @@ defmodule Mentor do
         |> Enum.map(fn linea ->
           case String.split(linea, ",") do
             [nombre, identificacion, celular, edad, equipo] when is_binary(nombre) and is_binary(identificacion) and is_binary(celular) and is_binary(edad) and is_binary(equipo) ->
-              %Persona{nombre: String.trim(nombre), identificacion: String.trim(identificacion), celular: String.trim(celular), edad: String.trim(edad), equipo: String.trim(equipo)}
+              %Mentor{nombre: String.trim(nombre), identificacion: String.trim(identificacion), celular: String.trim(celular), edad: String.trim(edad), equipo: String.trim(equipo)}
             _ -> nil
           end
         end)
@@ -44,7 +44,7 @@ defmodule Mentor do
     end
   end
 
-  def asigar_mentor_a_equipo(mentor, nombre_equipo) do
+  def asignar_mentor_a_equipo(mentor, nombre_equipo) do
     %{mentor | equipo: nombre_equipo}
   end
 

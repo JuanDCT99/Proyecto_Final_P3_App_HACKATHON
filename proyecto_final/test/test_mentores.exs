@@ -3,23 +3,12 @@ defmodule ProyectoFinal.Test.MentorTest do
   alias ProyectoFinal.Domain.Mentor
   import ExUnit.CaptureIO
 
-  defmodule MockCSVAdapter do
-    def write(_nombre_archivo, _header, _rows), do: :ok
+  @test_file "test_mentores.csv"
 
-    def read ("mentores.csv") do
-      {:ok,  {
-        ["Nombre", "Identificacion", "Celular", "Edad", "Equipo"],
-        [
-          [],
-          []
-        ]
-      }
-    }
-    end
-
-  def read("archivo_invalido.csv") do
-      {:error, :enoent}
-  end
+  setup do
+    on_exit(fn -> if File.exists?(@test_file), do: File.rm(@test_file)
+  end)
+  :ok
   end
 
   describe "crear/5" do
@@ -38,167 +27,326 @@ defmodule ProyectoFinal.Test.MentorTest do
 
       assert %Mentor{} = mentor
     end
+
+    test "crea un mentor con campos vacíos" do
+      mentor = Mentor.crear("", "", "", "", "")
+
+      assert mentor.nombre == ""
+      assert mentor.identificacion == ""
+      assert mentor.celular == ""
+      assert mentor.edad == ""
+      assert mentor.equipo == ""
+    end
   end
 
   describe "escribir_csv/2" do
-    setup do
+
+   test "escribe mentores en formato CSV correctamente" do
 
       mentores = [
-        Mentor.crear("Julian", "10291029", "31442281", "23", "Leones FC"),
-        Mentor.crear("Jeison", "12801920", "31121192", "32", "Aguilas FC")
+        Mentor.crear("Julian", "10291029", "31442281", "23", "Leones FC")
       ]
 
-      {:ok, mentores: mentores}
+      Mentor.escribir_csv(mentores, @test_file)
+
+      assert File.exists?(@test_file)
+      contenido = File.read!(@test_file)
+
+      assert contenido =~ "Nombre, Identificacion, Celular, Edad, Equipo"
+      assert contenido =~ "Julian, 10291029, 31442281, 23, Leones FC"
+    end
+
+  test "escribe múltiples mentores en archivo CSV" do
+      mentores = [
+        Mentor.crear("Robinson Buitrago", "1098308213", "3114101293", "30", "Aguilas FC"),
+        Mentor.crear("Juan Carlos Rojo", "1093842888", "31109283", "28", "Yeguas FC"),
+        Mentor.crear("Luisa Fernanda Ospina", "1082993123", "3121212344", "35", "Nutrias FC")
+      ]
+
+      Mentor.escribir_csv(mentores, @test_file)
+
+      contenido = File.read!(@test_file)
+      lineas = String.split(contenido, "\n", trim: true)
+
+      # 1 encabezado + 3 mentores = 4 líneas
+      assert length(lineas) == 4
+      assert Enum.at(lineas, 0) =~ "Nombre, Identificacion"
+      assert Enum.at(lineas, 1) =~ "Robinson Buitrago"
+      assert Enum.at(lineas, 2) =~ "Juan Carlos Rojo"
+      assert Enum.at(lineas, 3) =~ "Luisa Fernanda Ospina"
+    end
+
+    test "escribe lista vacía correctamente (solo encabezado)" do
+      Mentor.escribir_csv([], @test_file)
+
+      contenido = File.read!(@test_file)
+      lineas = String.split(contenido, "\n", trim: true)
+
+      assert length(lineas) == 1
+      assert hd(lineas) =~ "Nombre, Identificacion, celular, Edad, Equipo"
+    end
+
+    test "el formato CSV no tiene espacios extras en los datos" do
+      mentores = [
+        Mentor.crear("Ana", "111", "300", "25", "Team")
+      ]
+
+      Mentor.escribir_csv(mentores, @test_file)
+      contenido = File.read!(@test_file)
+
+      # Verificar que los datos están separados por coma sin espacios
+      assert contenido =~ "Ana,111,300,25,Team"
+      refute contenido =~ "Ana, 111"
+    end
+
+        test "sobrescribe archivo existente" do
+      # Primera escritura
+      mentores1 = [Mentor.crear("Primer", "001", "300", "30", "Team1")]
+      Mentor.escribir_csv(mentores1, @test_file)
+
+      # Segunda escritura
+      mentores2 = [Mentor.crear("Segundo", "002", "301", "31", "Team2")]
+      Mentor.escribir_csv(mentores2, @test_file)
+
+      contenido = File.read!(@test_file)
+
+      assert contenido =~ "Segundo"
+      refute contenido =~ "Primer"
     end
   end
 
-   test "escribe mentores en formato CSV correctamente", %{mentores: mentores} do
-      # Mock del CSVAdapter
-      Application.put_env(:proyecto_final, :csv_adapter, MockCSVAdapter)
+ describe "leer_csv/1" do
+    test "lee un mentor desde archivo CSV correctamente" do
+      # Preparar archivo
+      contenido = """
+      Nombre, Identificacion, celular, Edad, Equipo
+      Robinson Buitrago, 1098308213, 3114101293, 30, Aguilas FC
+      """
+      File.write!(@test_file, contenido)
 
-      # Esta función debería llamar al adapter con el formato correcto
-      # Verificamos que se formatea correctamente
-      [mentor1, mentor2] = equipos
+      mentores = Mentor.leer_csv(@test_file)
 
-    end
-  end
+      assert length(mentores) == 1
+      mentor = hd(mentores)
 
-  describe "leer_csv/1" do
-    setup do
-      # Configurar el mock para las pruebas
-      Application.put_env(:proyecto_final, :csv_adapter, MockCSVAdapter)
-      :ok
-    end
-
-    test "lee y parsea equipos correctamente desde CSV válido" do
-      # Para probar esto necesitas mockear Adapters.CSVAdapter
-      # Aquí simulo lo que debería retornar
-
-      equipos = [
-        %Equipo{nombre: "Equipo Alpha", groupID: "G001", integrantes: ["Juan", "María", "Pedro"]},
-        %Equipo{nombre: "Equipo Beta", groupID: "G002", integrantes: ["Ana", "Luis"]}
-      ]
-
-      # Verificar estructura
-      [equipo1, equipo2] = equipos
-
-      assert equipo1.nombre == "Equipo Alpha"
-      assert equipo1.groupID == "G001"
-      assert length(equipo1.integrantes) == 3
-
-      assert equipo2.nombre == "Equipo Beta"
-      assert length(equipo2.integrantes) == 2
+      assert mentor.nombre == "Robinson Buitrago"
+      assert mentor.identificacion == "1098308213"
+      assert mentor.celular == "3114101293"
+      assert mentor.edad == "30"
+      assert mentor.equipo == "Aguilas FC"
     end
 
-    test "parsea correctamente integrantes separados por punto y coma" do
-      integrantes_string = "Juan;María;Pedro"
-      integrantes_lista = String.split(integrantes_string, ";") |> Enum.map(&String.trim/1)
+    test "lee múltiples mentores desde archivo CSV" do
+      contenido = """
+      Nombre, Identificacion, celular, Edad, Equipo
+      Robinson Buitrago, 1098308213, 3114101293,30, Aguilas FC
+      Juan Carlos Rojo, 1093842888, 31109283, 28, Yeguas FC
+      Luisa Fernanda Ospina, 1082993123, 3121212344, 35, Nutrias FC
+      """
+      File.write!(@test_file, contenido)
 
-      assert integrantes_lista == ["Juan", "María", "Pedro"]
+      mentores = Mentor.leer_csv(@test_file)
+
+      assert length(mentores) == 3
+      assert Enum.at(mentores, 0).nombre == "Robinson Buitrago"
+      assert Enum.at(mentores, 1).nombre == "Juan Carlos Rojo"
+      assert Enum.at(mentores, 2).nombre == "Luisa Fernanda Ospina"
     end
 
-    test "maneja espacios en blanco en los datos" do
-      nombre = "  Equipo Alpha  "
-      groupID = "  G001  "
+    test "elimina espacios en blanco de los datos al leer" do
+      contenido = """
+      Nombre, Identificacion, celular, Edad, Equipo
+        Robinson Buitrago, 1098308213, 3114101293,30, Aguilas FC
+      """
+      File.write!(@test_file, contenido)
 
-      assert String.trim(nombre) == "Equipo Alpha"
-      assert String.trim(groupID) == "G001"
+      mentores = Mentor.leer_csv(@test_file)
+      mentor = hd(mentores)
+
+      assert mentor.nombre == " Robinson Buitrago"
+      assert mentor.identificacion == "1098308213"
+      assert mentor.equipo == "Aguilas FC"
     end
 
-    test "retorna lista vacía cuando hay error al leer archivo" do
+    test "ignora líneas vacías en el archivo" do
+      contenido = """
+      Nombre, Identificacion, celular, Edad, Equipo
+      Robinson Buitrago, 1098308213, 3114101293,30, Aguilas FC
+
+      Rubén Doblas Gundersen,1098309002,3435542314,32, Limón 4K
+
+      """
+      File.write!(@test_file, contenido)
+
+      mentores = Mentor.leer_csv(@test_file)
+
+      assert length(mentores) == 2
+    end
+
+    test "ignora líneas con formato inválido (menos de 5 campos)" do
+      contenido = """
+      Nombre, Identificacion, celular, Edad, Equipo
+      Ariana Grande,01299120,3001234567,41, Ari FC
+      Inválido,Solo,Tres
+      Luna Rodriguez,789012,301271543,22, Luna FC
+      """
+      File.write!(@test_file, contenido)
+
+      mentores = Mentor.leer_csv(@test_file)
+
+      assert length(mentores) == 2
+      assert Enum.at(mentores, 0).nombre == "Jeison Pérez"
+      assert Enum.at(mentores, 1).nombre == "María Artunduaga"
+    end
+
+    test "ignora el encabezado del CSV" do
+      contenido = """
+      Nombre, Identificacion, celular, Edad, Equipo
+      Jeison Cardozo,2109201,314412812,30, Jeison FC
+      """
+      File.write!(@test_file, contenido)
+
+      mentores = Mentor.leer_csv(@test_file)
+
+      # Solo debe leer 1 mentor, no el encabezado
+      assert length(mentores) == 1
+      refute Enum.any?(mentores, fn m -> m.nombre == "Nombre" end)
+    end
+
+    test "retorna lista vacía cuando el archivo no existe" do
       output = capture_io(fn ->
-        equipos = Equipo.leer_csv("archivo_invalido.csv")
-        send(self(), {:resultado, equipos})
+        mentores = Mentor.leer_csv("archivo_inexistente.csv")
+        send(self(), {:resultado, mentores})
       end)
 
-      assert_receive {:resultado, equipos}
-      assert equipos == []
+      assert_receive {:resultado, mentores}
+      assert mentores == []
       assert output =~ "Error al leer el archivo"
     end
 
-    test "filtra filas inválidas (nil)" do
-      # Simular datos con filas inválidas
-      datos_mixtos = [
-        %Equipo{nombre: "Válido", groupID: "G001", integrantes: []},
-        nil,
-        %Equipo{nombre: "Otro Válido", groupID: "G002", integrantes: []}
-      ]
+    test "retorna lista vacía cuando el archivo está vacío" do
+      File.write!(@test_file, "")
 
-      resultado = Enum.reject(datos_mixtos, &is_nil/1)
+      mentores = Mentor.leer_csv(@test_file)
 
-      assert length(resultado) == 2
-      refute Enum.any?(resultado, &is_nil/1)
+      assert mentores == []
+    end
+
+    test "maneja archivo con solo encabezado" do
+      File.write!(@test_file, "Nombre, Identificacion, celular, Edad, Equipo\n")
+
+      mentores = Mentor.leer_csv(@test_file)
+
+      assert mentores == []
     end
   end
 
-  describe "ingresar_integrante/2" do
+  describe "asignar_mentor_a_equipo/2" do
     setup do
-      equipo = Equipo.crear("Los Leones", "G100", ["Juan", "María"])
-      persona = %{nombre: "Pedro", edad: 20}
-      persona_existente = %{nombre: "Juan", edad: 22}
-
-      {:ok, equipo: equipo, persona: persona, persona_existente: persona_existente}
+      mentor = Mentor.crear("Juan Sebastian Guarnizo", "123331912", "3001234567", "35", "")
+      {:ok, mentor: mentor}
     end
 
-    test "agrega un nuevo integrante al equipo", %{equipo: equipo, persona: persona} do
-      equipo_actualizado = Equipo.ingresar_integrante(equipo, persona)
+    test "asigna un equipo a un mentor sin equipo", %{mentor: mentor} do
+      mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor, "Equipo Alpha")
 
-      assert "Pedro" in equipo_actualizado.integrantes
-      assert length(equipo_actualizado.integrantes) == 3
+      assert mentor_actualizado.equipo == "Equipo Alpha"
     end
 
-    test "no duplica integrante si ya existe en el equipo", %{equipo: equipo, persona_existente: persona_existente} do
-      output = capture_io(fn ->
-        equipo_actualizado = Equipo.ingresar_integrante(equipo, persona_existente)
-        send(self(), {:equipo, equipo_actualizado})
-      end)
+    test "cambia el equipo de un mentor que ya tenía uno", %{mentor: mentor} do
+      mentor_con_equipo = %{mentor | equipo: "Equipo Beta"}
+      mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor_con_equipo, "Equipo Gamma")
 
-      assert_receive {:equipo, equipo_actualizado}
-
-      # El equipo no debe cambiar
-      assert equipo_actualizado.integrantes == equipo.integrantes
-      assert length(equipo_actualizado.integrantes) == 2
-
-      # Debe mostrar mensaje
-      assert output =~ "El integrante ya está en el equipo"
+      assert mentor_actualizado.equipo == "Equipo Gamma"
+      refute mentor_actualizado.equipo == "Equipo Beta"
     end
 
-    test "mantiene integrantes existentes al agregar uno nuevo", %{equipo: equipo, persona: persona} do
-      equipo_actualizado = Equipo.ingresar_integrante(equipo, persona)
+    test "no modifica otros campos del mentor", %{mentor: mentor} do
+      mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor, "Nuevo Equipo")
 
-      assert "Juan" in equipo_actualizado.integrantes
-      assert "María" in equipo_actualizado.integrantes
-      assert "Pedro" in equipo_actualizado.integrantes
+      assert mentor_actualizado.nombre == mentor.nombre
+      assert mentor_actualizado.identificacion == mentor.identificacion
+      assert mentor_actualizado.celular == mentor.celular
+      assert mentor_actualizado.edad == mentor.edad
     end
 
-    test "el nuevo integrante se agrega al inicio de la lista", %{equipo: equipo, persona: persona} do
-      equipo_actualizado = Equipo.ingresar_integrante(equipo, persona)
+    test "puede asignar string vacío como equipo", %{mentor: mentor} do
+      mentor_con_equipo = %{mentor | equipo: "Equipo A"}
+      mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor_con_equipo, "")
 
-      assert hd(equipo_actualizado.integrantes) == "Pedro"
+      assert mentor_actualizado.equipo == ""
     end
 
-    test "no modifica otros campos del equipo", %{equipo: equipo, persona: persona} do
-      equipo_actualizado = Equipo.ingresar_integrante(equipo, persona)
+    test "asigna equipo con caracteres especiales", %{mentor: mentor} do
+      mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor, "Equipo Ñoño #1")
 
-      assert equipo_actualizado.nombre == equipo.nombre
-      assert equipo_actualizado.groupID == equipo.groupID
+      assert mentor_actualizado.equipo == "Equipo Ñoño #1"
+    end
+
+    test "el mentor original no se modifica (inmutabilidad)", %{mentor: mentor} do
+      equipo_original = mentor.equipo
+      _mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor, "Equipo Nuevo")
+
+      assert mentor.equipo == equipo_original
     end
   end
 
-  describe "struct Equipo" do
+  describe "struct Mentor" do
     test "tiene los campos correctos por defecto" do
-      equipo = %Equipo{}
+      mentor = %Mentor{}
 
-      assert equipo.nombre == ""
-      assert equipo.groupID == ""
-      assert equipo.integrantes == []
+      assert mentor.nombre == ""
+      assert mentor.identificacion == ""
+      assert mentor.celular == ""
+      assert mentor.edad == ""
+      assert mentor.equipo == ""
     end
 
     test "permite actualizar campos individualmente" do
-      equipo = %Equipo{}
-      equipo_actualizado = %{equipo | nombre: "Nuevo Nombre"}
+      mentor = %Mentor{}
+      mentor_actualizado = %{mentor | nombre: "Nuevo Nombre", edad: "40"}
 
-      assert equipo_actualizado.nombre == "Nuevo Nombre"
-      assert equipo_actualizado.groupID == ""
+      assert mentor_actualizado.nombre == "Nuevo Nombre"
+      assert mentor_actualizado.edad == "40"
+      assert mentor_actualizado.identificacion == ""
+    end
+
+    test "permite crear con valores personalizados" do
+      mentor = %Mentor{
+        nombre: "Test",
+        identificacion: "999",
+        celular: "3000000000",
+        edad: "50",
+        equipo: "Test Team"
+      }
+
+      assert mentor.nombre == "Test"
+      assert mentor.celular == "3000000000"
     end
   end
+
+  describe "integración escribir_csv y leer_csv" do
+    test "los datos escritos pueden ser leídos correctamente" do
+      mentores_originales = [
+        Mentor.crear("Juan Pérez", "123456", "3001234567", "30", "Equipo A"),
+        Mentor.crear("María López", "789012", "3009876543", "28", "Equipo B")
+      ]
+
+      # Escribir
+      Mentor.escribir_csv(mentores_originales, @test_file)
+
+      # Leer
+      mentores_leidos = Mentor.leer_csv(@test_file)
+
+      assert length(mentores_leidos) == 2
+
+      # Verificar primer mentor
+      assert Enum.at(mentores_leidos, 0).nombre == "Paola Jimenez"
+      assert Enum.at(mentores_leidos, 0).identificacion == "123456"
+
+      # Verificar segundo mentor
+      assert Enum.at(mentores_leidos, 1).nombre == "Ruben Dario"
+      assert Enum.at(mentores_leidos, 1).equipo == "Equipo Z"
+    end
+  end
+end
