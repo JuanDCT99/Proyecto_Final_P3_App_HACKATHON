@@ -47,7 +47,7 @@ defmodule ProyectoFinal.Hackaton do
     #Caso /teams
 
   defp procesar_comando(input) do
-    case String.split(input, " ", trim: true) do
+    case String.split(input, " ", parts: 2, trim: true) do
       ["/teams"] -> handle_teams()
       ["/create-team"] -> handle_create_team()
       ["/create-project"] -> handle_create_project()
@@ -56,6 +56,16 @@ defmodule ProyectoFinal.Hackaton do
       ["/help"] -> handle_help()
       ["/project", nombre_equipo] -> handle_project(nombre_equipo)
       ["/join", nombre_equipo] -> handle_join(nombre_equipo)
+      ["/historial", nombre_equipo] -> handle_historial(nombre_equipo)
+      # --- Comandos de mentoría / consultas ---
+      ["/enviar-consulta", rest] ->
+        # espera: "/enviar-consulta <equipo> <mensaje...>"
+        case String.split(rest, " ", parts: 2) do
+          [nombre_equipo, mensaje] -> handle_enviar_consulta(nombre_equipo, mensaje)
+          _ -> Funcional.mostrar_mensaje("Uso: /enviar-consulta <equipo> <mensaje>")
+        end
+      ["/ver-consultas", nombre_equipo] -> handle_ver_consultas(nombre_equipo)
+      ["/responder-consulta", nombre_equipo] -> handle_responder_consulta(nombre_equipo)
       # Comandos de Chat
       ["/chat", nombre_equipo] -> handle_chat(nombre_equipo)
       ["/salas"] -> handle_list_rooms()
@@ -68,8 +78,11 @@ defmodule ProyectoFinal.Hackaton do
       ["/restore-chat", backup] -> handle_restore_chat(backup)
       ["/list-backups"] -> handle_list_backups()
       ["/export-all-chats"] -> handle_export_all()
-      ["/clean-old-messages", dias] -> handle_clean_messages(dias)
       ["/chat-integrity"] -> handle_chat_integrity()
+      ["/export-users"] -> handle_export_users()
+      ["/show-users-by-sala"] -> handle_show_users_by_sala()
+      ["/clean-messages", dias] -> handle_clean_messages(dias)
+
 
       _-> handle_comando_desconocido()
     end
@@ -80,31 +93,32 @@ defmodule ProyectoFinal.Hackaton do
   end
 
   defp handle_backup_chat do
-    Funcional.mostrar_mensaje("--- Creando Backup del Chat ---")
-    case PersistenceManager.crear_backup() do
-      {:ok, path, _resultado} ->
-        Funcional.mostrar_mensaje("✓ Backup creado exitosamente en: #{path}")
-      {:error, reason} ->
-        Funcional.mostrar_mensaje("❌ Error al crear backup: #{reason}")
+  Funcional.mostrar_mensaje("--- Creando Backup del Chat ---")
+  case PersistenceManager.crear_backup() do
+    {:ok, path, _resultado} ->
+      Funcional.mostrar_mensaje("✓ Backup creado exitosamente en: #{path}")
+    _ ->
+      Funcional.mostrar_mensaje("⚠️ Hubo un problema al crear el backup")
     end
   end
 
   defp handle_restore_chat(backup_nombre) do
-    Funcional.mostrar_mensaje("--- Restaurando Backup del Chat ---")
-    Funcional.mostrar_mensaje("⚠️  ADVERTENCIA: Esto sobrescribirá los datos actuales.")
-    confirmacion = Funcional.input("¿Continuar? (si/no): ", :string)
+  Funcional.mostrar_mensaje("--- Restaurando Backup del Chat ---")
+  Funcional.mostrar_mensaje("⚠️  ADVERTENCIA: Esto sobrescribirá los datos actuales.")
+  confirmacion = Funcional.input("¿Continuar? (si/no): ", :string)
 
-    if String.downcase(confirmacion) == "si" do
-      case PersistenceManager.restaurar_backup(backup_nombre) do
-        {:ok, _resultado} ->
-          Funcional.mostrar_mensaje("✓ Backup restaurado. Reinicia la aplicación.")
-        {:error, reason} ->
-          Funcional.mostrar_mensaje("❌ Error: #{reason}")
-      end
-    else
-      Funcional.mostrar_mensaje("Operación cancelada.")
+  if String.downcase(confirmacion) == "si" do
+    case PersistenceManager.restaurar_backup(backup_nombre) do
+      {:ok, _resultado} ->
+        Funcional.mostrar_mensaje("✓ Backup restaurado. Reinicia la aplicación.")
+      {:error, reason} ->
+        Funcional.mostrar_mensaje("❌ Error: #{reason}")
     end
+  else
+    Funcional.mostrar_mensaje("Operación cancelada.")
   end
+end
+
 
   defp handle_list_backups do
     PersistenceManager.listar_backups()
@@ -130,7 +144,22 @@ defmodule ProyectoFinal.Hackaton do
   end
 
   defp handle_chat_integrity do
-    PersistenceManager.verificar_integridad()
+  PersistenceManager.verificar_integridad()
+end
+
+  defp handle_export_users do
+  Funcional.mostrar_mensaje("--- Exportar Usuarios por Sala ---")
+  case PersistenceManager.exportar_usuarios_consolidado() do
+    {:ok, archivo} ->
+      Funcional.mostrar_mensaje("✓ Usuarios exportados exitosamente")
+      Funcional.mostrar_mensaje("  Archivo: #{archivo}")
+    {:error, reason} ->
+      Funcional.mostrar_mensaje("❌ Error al exportar: #{reason}")
+    end
+  end
+
+  defp handle_show_users_by_sala do
+   PersistenceManager.mostrar_usuarios_por_sala()
   end
 
   #Handlers referentes a comandos
@@ -151,35 +180,37 @@ defmodule ProyectoFinal.Hackaton do
   end
 
   defp handle_help do
-    Funcional.mostrar_mensaje("""
-    --- Comandos Disponibles ---
-    ---------------------------------------------------------------------------------------
-    /teams                  -> Muestra la lista de equipos registrados
-    /create-team            -> Crea un nuevo equipo
-    /create-project         -> Crea un nuevo proyecto
-    /add-user               -> Agrega un nuevo usuario a un equipo
-    /create-mentor          -> Designa un mentor a un equipo
-    /project <equipo>       -> Muestra la informacion referente a el proyecto de un equipo
-    /join <equipo>          -> Permite unirse a un equipo
-    --- Comandos de Chat ---
-    /chat <sala>            -> Inicia una sesión de chat en una sala.
-    /salas                  -> Muestra las salas de chat disponibles.
-    /create_room            -> Inicia la creación de una nueva sala de chat.
-    /broadcast              -> Envía un mensaje a todas las salas (solo admin).
-    /users <sala>           -> Muestra el número de usuarios en una sala.
-     === Gestión del Chat (NUEVO) ===
-    /chat-stats             -> Ver estadísticas del chat
-    /backup-chat            -> Crear backup completo
-    /list-backups           -> Listar backups disponibles
-    /restore-chat <nombre>  -> Restaurar desde backup
-    /export-all-chats       -> Exportar todas las salas a CSV
-    /clean-old-messages <días> -> Limpiar mensajes antiguos
-    /chat-integrity         -> Verificar integridad de archivos
-    /help                   -> Muestra esta ayuda
-    ----------------------------------------------------------------------------------------
-    """)
+  Funcional.mostrar_mensaje("""
+  ╔========================== COMANDOS DISPONIBLES ==========================╗
 
-  end
+[ EQUIPOS Y PROYECTOS ]
+  /teams                 -> Lista equipos                |  /create-team          -> Crear equipo
+  /create-project        -> Crear proyecto               |  /add-user             -> Agregar usuario
+  /create-mentor         -> Asignar mentor               |  /project <equipo>     -> Ver proyecto
+  /join <equipo>         -> Unirse a equipo              |  /historial <equipo>   -> Ver historial
+
+[ MENTORÍA ]
+  /enviar-consulta <equipo> <msg>  -> Enviar consulta    |  /ver-consultas <equipo> -> Ver consultas
+  /responder-consulta <equipo>     -> Responder consulta
+
+[ CHAT ]
+  /chat <sala>           -> Entrar a sala                |  /salas                -> Ver salas
+  /create_room           -> Crear sala                   |  /users <sala>         -> Ver usuarios
+  /broadcast             -> Mensaje global
+
+[ CHAT AVANZADO ]
+  /chat-stats            -> Estadísticas chat            |  /backup-chat          -> Crear backup
+  /list-backups          -> Listar backups               |  /restore-chat <file>  -> Restaurar backup
+  /export-all-chats      -> Exportar chats               |  /chat-integrity       -> Verificar integridad
+  /export-users          -> Exportar usuarios            |  /show-users-by-sala   -> Usuarios por sala
+  /clean-messages <días> -> Limpiar mensajes viejos
+
+[ AYUDA ]
+  /help                  -> Mostrar ayuda
+
+╚==========================================================================╝
+  """)
+end
 
   defp handle_project(nombre_equipo) do
     Funcional.mostrar_mensaje("---- Buscando proyecto del equipo: #{nombre_equipo} ----")
@@ -232,6 +263,105 @@ defmodule ProyectoFinal.Hackaton do
       end
     end
 
+  # Mostrar todo el historial/avances del proyecto
+  defp handle_historial(nombre_equipo) do
+    proyectos = Proyectos_Hackaton.leer_csv(@proyectos_csv_path)
+    case Enum.find(proyectos, fn p -> String.downcase(p.nombre) == String.downcase(nombre_equipo) end) do
+      nil ->
+        Funcional.mostrar_mensaje("No se encontró proyecto para #{nombre_equipo}")
+      proyecto ->
+        if proyecto.avances == [] do
+          Funcional.mostrar_mensaje("No hay avances registrados para #{nombre_equipo}")
+        else
+          Funcional.mostrar_mensaje("Historial de avances para #{nombre_equipo}:")
+          Enum.with_index(proyecto.avances, 1)
+          |> Enum.each(fn {av, idx} -> Funcional.mostrar_mensaje("#{idx}. #{av}") end)
+        end
+    end
+  end
+
+  # ----- Nuevos handlers para consultas / mentoring -----
+
+  # Enviar una consulta: se solicita remitente y el texto (mensaje ya llega desde el comando)
+  defp handle_enviar_consulta(nombre_equipo, mensaje) do
+    equipos = Equipo.leer_csv(@equipos_csv_path)
+
+    case Enum.find(equipos, fn e -> String.downcase(e.nombre) == String.downcase(nombre_equipo) end) do
+      nil ->
+        Funcional.mostrar_mensaje("Error: El equipo #{nombre_equipo} no existe.")
+      _equipo ->
+        remitente = Funcional.input("Ingrese su nombre (quien realiza la consulta): ", :string)
+        texto = "CONSULTA de #{remitente}: #{mensaje}"
+
+        case Proyectos_Hackaton.agregar_avance(nombre_equipo, texto) do
+          :ok ->
+            Funcional.mostrar_mensaje("Consulta registrada y enviada a los mentores de #{nombre_equipo}.")
+          {:error, :not_found} ->
+            Funcional.mostrar_mensaje("No se encontró el proyecto para el equipo #{nombre_equipo}. Cree el proyecto primero.")
+          {:error, reason} ->
+            Funcional.mostrar_mensaje("Error al registrar la consulta: #{inspect(reason)}")
+        end
+    end
+  end
+
+  # Ver consultas: lista avaces que comienzan por "CONSULTA"
+  defp handle_ver_consultas(nombre_equipo) do
+    proyectos = Proyectos_Hackaton.leer_csv(@proyectos_csv_path)
+
+    case Enum.find(proyectos, fn p -> String.downcase(p.nombre) == String.downcase(nombre_equipo) end) do
+      nil ->
+        Funcional.mostrar_mensaje("No se encontró proyecto para #{nombre_equipo}")
+      proyecto ->
+        consultas = Enum.filter(proyecto.avances, fn av -> String.starts_with?(av, "CONSULTA") end)
+        if consultas == [] do
+          Funcional.mostrar_mensaje("No hay consultas registradas para #{nombre_equipo}")
+        else
+          Funcional.mostrar_mensaje("Consultas para #{nombre_equipo}:")
+          Enum.with_index(consultas, 1)
+          |> Enum.each(fn {c, i} -> Funcional.mostrar_mensaje("#{i}. #{c}") end)
+        end
+    end
+  end
+
+  # Responder una consulta: flujo interactivo (escoge índice, pide mentor y respuesta)
+  defp handle_responder_consulta(nombre_equipo) do
+    proyectos = Proyectos_Hackaton.leer_csv(@proyectos_csv_path)
+
+    case Enum.find(proyectos, fn p -> String.downcase(p.nombre) == String.downcase(nombre_equipo) end) do
+      nil ->
+        Funcional.mostrar_mensaje("No se encontró proyecto para #{nombre_equipo}")
+      proyecto ->
+        consultas = Enum.filter(proyecto.avances, fn av -> String.starts_with?(av, "CONSULTA") end)
+
+        if Enum.empty?(consultas) do
+          Funcional.mostrar_mensaje("No hay consultas pendientes para #{nombre_equipo}")
+        else
+          Funcional.mostrar_mensaje("Consultas pendientes:")
+          Enum.with_index(consultas, 1)
+          |> Enum.each(fn {c, i} -> Funcional.mostrar_mensaje("#{i}. #{c}") end)
+
+          idx_str = Funcional.input("Ingrese el número de la consulta a responder: ", :string)
+          idx = try do String.to_integer(idx_str) rescue _ -> -1 end
+
+          if idx < 1 or idx > length(consultas) do
+            Funcional.mostrar_mensaje("Índice inválido.")
+          else
+            mentor = Funcional.input("Ingrese el nombre del mentor que responde: ", :string)
+            respuesta = Funcional.input("Ingrese la respuesta del mentor: ", :string)
+            texto_respuesta = "RESPUESTA de #{mentor}: #{respuesta}"
+
+            case Proyectos_Hackaton.agregar_avance(nombre_equipo, texto_respuesta) do
+              :ok ->
+                Funcional.mostrar_mensaje("Respuesta registrada en el historial del proyecto.")
+              {:error, :not_found} ->
+                Funcional.mostrar_mensaje("No se encontró el proyecto para el equipo #{nombre_equipo}.")
+              {:error, reason} ->
+                Funcional.mostrar_mensaje("Error al guardar la respuesta: #{inspect(reason)}")
+            end
+          end
+        end
+    end
+  end
 
   # --- Handlers de Chat ---
 

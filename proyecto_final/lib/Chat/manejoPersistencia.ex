@@ -5,10 +5,11 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
   """
 
   alias ProyectoFinal.Chat.ChatServer
+  alias ProyectoFinal.Services.Util, as: Funcional
 
   @mensajes_path "priv/chat_mensajes.bin"
   @salas_path "priv/chat_salas.bin"
-  @usuarios_activos_path "priv/chat_usuarios.csv"
+  @usuarios_salas_csv "priv/chat_usuarios_salas.csv"
   @backup_dir "priv/backups"
 
   # ============================================================
@@ -29,7 +30,7 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
     archivos = [
       {@mensajes_path, "mensajes.bin"},
       {@salas_path, "salas.bin"},
-      {@usuarios_activos_path, "usuarios.csv"}
+      {@usuarios_salas_csv, "usuarios_salas.csv"}
     ]
 
     resultado = Enum.reduce(archivos, [], fn {origen, destino}, acc ->
@@ -55,7 +56,7 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
     metadata_path = Path.join(backup_path, "metadata.txt")
     File.write!(metadata_path, inspect(metadata, pretty: true))
 
-    IO.puts("✓ Backup creado en: #{backup_path}")
+     Funcional.mostrar_mensaje("✓ Backup creado en: #{backup_path}")
     {:ok, backup_path, resultado}
   end
 
@@ -70,20 +71,20 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
         end)
         |> Enum.sort(:desc)
 
-        IO.puts("\n=== Backups Disponibles ===")
+         Funcional.mostrar_mensaje("\n=== Backups Disponibles ===")
         Enum.each(backups, fn backup ->
-          IO.puts("  • #{backup}")
+           Funcional.mostrar_mensaje("  • #{backup}")
         end)
-        IO.puts("===========================\n")
+         Funcional.mostrar_mensaje("===========================\n")
 
         backups
 
       {:error, :enoent} ->
-        IO.puts("No hay backups disponibles.")
+         Funcional.mostrar_mensaje("No hay backups disponibles.")
         []
 
       {:error, reason} ->
-        IO.puts("Error al listar backups: #{reason}")
+         Funcional.mostrar_mensaje("Error al listar backups: #{reason}")
         []
     end
   end
@@ -98,7 +99,7 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
       archivos = [
         {Path.join(backup_path, "mensajes.bin"), @mensajes_path},
         {Path.join(backup_path, "salas.bin"), @salas_path},
-        {Path.join(backup_path, "usuarios.csv"), @usuarios_activos_path}
+        {Path.join(backup_path, "usuarios_salas.csv"), @usuarios_salas_csv}
       ]
 
       resultado = Enum.map(archivos, fn {origen, destino} ->
@@ -112,8 +113,8 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
         end
       end)
 
-      IO.puts("✓ Backup restaurado desde: #{backup_path}")
-      IO.puts("⚠️  Reinicia el ChatServer para cargar los datos restaurados.")
+       Funcional.mostrar_mensaje("✓ Backup restaurado desde: #{backup_path}")
+       Funcional.mostrar_mensaje("⚠️  Reinicia el ChatServer para cargar los datos restaurados.")
 
       {:ok, resultado}
     else
@@ -129,7 +130,7 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
 
     if File.exists?(backup_path) do
       File.rm_rf!(backup_path)
-      IO.puts("✓ Backup eliminado: #{nombre_backup}")
+       Funcional.mostrar_mensaje("✓ Backup eliminado: #{nombre_backup}")
       :ok
     else
       {:error, "Backup no encontrado: #{nombre_backup}"}
@@ -146,27 +147,22 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
   def generar_reporte_completo() do
     estadisticas = ChatServer.obtener_estadisticas()
 
-    IO.puts("\n╔══════════════════════════════════════════╗")
-    IO.puts("║     REPORTE COMPLETO DEL CHAT SERVER     ║")
-    IO.puts("╚══════════════════════════════════════════╝")
-    IO.puts("\n📊 Estadísticas Generales:")
-    IO.puts("   • Total de salas: #{estadisticas.total_salas}")
-    IO.puts("   • Total de mensajes: #{estadisticas.total_mensajes}")
-    IO.puts("   • Usuarios activos: #{estadisticas.total_usuarios_activos}")
+     Funcional.mostrar_mensaje("\n╔══════════════════════════════════════════╗")
+     Funcional.mostrar_mensaje("║     REPORTE COMPLETO DEL CHAT SERVER     ║")
+     Funcional.mostrar_mensaje("╚══════════════════════════════════════════╝")
+     Funcional.mostrar_mensaje("\n📊 Estadísticas Generales:")
+     Funcional.mostrar_mensaje("   • Total de salas: #{estadisticas.total_salas}")
+     Funcional.mostrar_mensaje("   • Total de mensajes: #{estadisticas.total_mensajes}")
+     Funcional.mostrar_mensaje("   • Usuarios únicos: #{estadisticas.total_usuarios_unicos}")
 
-    if estadisticas.sala_mas_activa do
-      IO.puts("   • Sala más activa: #{estadisticas.sala_mas_activa}")
-      IO.puts("     (#{estadisticas.mensajes_sala_mas_activa} mensajes)")
-    end
-
-    IO.puts("\n📁 Archivos de Persistencia:")
+     Funcional.mostrar_mensaje("\n📁 Archivos de Persistencia:")
     verificar_archivos_persistencia()
 
-    IO.puts("\n💾 Información de Backups:")
+     Funcional.mostrar_mensaje("\n💾 Información de Backups:")
     backups = listar_backups()
-    IO.puts("   Total de backups: #{length(backups)}")
+     Funcional.mostrar_mensaje("   Total de backups: #{length(backups)}")
 
-    IO.puts("\n════════════════════════════════════════════\n")
+     Funcional.mostrar_mensaje("\n════════════════════════════════════════════\n")
   end
 
   @doc """
@@ -181,7 +177,7 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
     resultados = Enum.map(salas, fn sala ->
       nombre_archivo = "sala_#{sala.id}_#{timestamp}.csv"
 
-      case ChatServer.exportar_historial_csv(sala.id, nombre_archivo) do
+      case exportar_sala_csv(sala, nombre_archivo) do
         {:ok, mensaje} -> {:ok, sala.id, mensaje}
         {:error, razon} -> {:error, sala.id, razon}
       end
@@ -189,37 +185,34 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
 
     exitosos = Enum.count(resultados, fn r -> elem(r, 0) == :ok end)
 
-    IO.puts("\n✓ Exportación completada:")
-    IO.puts("  • Salas exportadas: #{exitosos}/#{length(salas)}")
-    IO.puts("  • Ubicación: priv/exports/")
+     Funcional.mostrar_mensaje("\n✓ Exportación completada:")
+     Funcional.mostrar_mensaje("  • Salas exportadas: #{exitosos}/#{length(salas)}")
+     Funcional.mostrar_mensaje("  • Ubicación: priv/exports/")
 
     resultados
   end
 
-  @doc """
-  Limpia los datos antiguos del chat.
-  """
-  def limpiar_datos_antiguos(opciones \\ []) do
-    dias = Keyword.get(opciones, :dias, 30)
-    crear_backup_antes = Keyword.get(opciones, :backup, true)
+  defp exportar_sala_csv(sala, nombre_archivo) do
+    try do
+      ruta_completa = "priv/exports/#{nombre_archivo}"
 
-    IO.puts("\n🧹 Iniciando limpieza de datos antiguos...")
+      # Obtener historial de la sala
+      historial = ChatServer.historial(sala.id, 1000)
 
-    if crear_backup_antes do
-      IO.puts("📦 Creando backup de seguridad...")
-      crear_backup()
-    end
+      encabezado = "Timestamp,Remitente,Canal,Contenido\n"
+      contenido = Enum.map(historial, fn msg ->
+        timestamp = DateTime.to_string(msg.timestamp)
+        # Escapar comas en el contenido
+        contenido_escapado = String.replace(msg.contenido, ",", ";")
+        "#{timestamp},#{msg.remitente},#{sala.id},#{contenido_escapado}\n"
+      end)
+      |> Enum.join("")
 
-    case ChatServer.limpiar_mensajes_antiguos(dias) do
-      {:ok, mensajes_eliminados} ->
-        IO.puts("✓ Limpieza completada:")
-        IO.puts("  • Mensajes eliminados: #{mensajes_eliminados}")
-        IO.puts("  • Mensajes anteriores a: #{dias} días")
-        {:ok, mensajes_eliminados}
+      File.write!(ruta_completa, encabezado <> contenido)
 
-      {:error, reason} ->
-        IO.puts("❌ Error en limpieza: #{reason}")
-        {:error, reason}
+      {:ok, "Historial exportado a #{ruta_completa}"}
+    rescue
+      e -> {:error, "Error al exportar: #{Exception.message(e)}"}
     end
   end
 
@@ -227,12 +220,12 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
   Verifica la integridad de los archivos de persistencia.
   """
   def verificar_integridad() do
-    IO.puts("\n🔍 Verificando integridad de archivos...")
+     Funcional.mostrar_mensaje("\n🔍 Verificando integridad de archivos...")
 
     archivos = [
       {@mensajes_path, "Mensajes"},
       {@salas_path, "Salas"},
-      {@usuarios_activos_path, "Usuarios Activos"}
+      {@usuarios_salas_csv, "Usuarios por Sala"}
     ]
 
     resultados = Enum.map(archivos, fn {path, nombre} ->
@@ -240,31 +233,131 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
         case File.stat(path) do
           {:ok, stat} ->
             tamano_kb = div(stat.size, 1024)
-            IO.puts("  ✓ #{nombre}: #{tamano_kb} KB")
+             Funcional.mostrar_mensaje("  ✓ #{nombre}: #{tamano_kb} KB")
             {:ok, nombre, stat.size}
 
           {:error, reason} ->
-            IO.puts("  ❌ #{nombre}: Error - #{reason}")
+             Funcional.mostrar_mensaje("  ❌ #{nombre}: Error - #{reason}")
             {:error, nombre, reason}
         end
       else
-        IO.puts("  ⚠️  #{nombre}: Archivo no encontrado")
+         Funcional.mostrar_mensaje("  ⚠️  #{nombre}: Archivo no encontrado")
         {:not_found, nombre}
       end
     end)
 
-    IO.puts("")
+     Funcional.mostrar_mensaje("")
 
     errores = Enum.count(resultados, fn r -> elem(r, 0) == :error end)
     if errores == 0 do
-      IO.puts("✓ Todos los archivos están correctos")
+       Funcional.mostrar_mensaje("✓ Todos los archivos están correctos")
     else
-      IO.puts("⚠️  Se encontraron #{errores} errores")
+       Funcional.mostrar_mensaje("⚠️  Se encontraron #{errores} errores")
     end
 
     resultados
   end
 
+  @doc """
+  Exporta los usuarios de todas las salas a un CSV consolidado.
+  """
+  def exportar_usuarios_consolidado() do
+    salas = ChatServer.listar_salas()
+    timestamp = DateTime.utc_now() |> DateTime.to_unix()
+
+    File.mkdir_p!("priv/exports")
+    nombre_archivo = "priv/exports/usuarios_consolidado_#{timestamp}.csv"
+
+    encabezado = "Sala,NumeroUsuarios,Usuarios\n"
+
+    contenido = Enum.map(salas, fn sala ->
+      usuarios_str = Enum.join(sala.usuarios, ";")
+      "#{sala.id},#{length(sala.usuarios)},#{usuarios_str}\n"
+    end)
+    |> Enum.join("")
+
+    case File.write(nombre_archivo, encabezado <> contenido) do
+      :ok ->
+         Funcional.mostrar_mensaje("✓ Usuarios exportados a: #{nombre_archivo}")
+        {:ok, nombre_archivo}
+      {:error, reason} ->
+        {:error, "No se pudo escribir el archivo: #{reason}"}
+    end
+  end
+
+  @doc """
+  Muestra el listado de usuarios por sala de forma visual.
+  """
+  def mostrar_usuarios_por_sala() do
+    salas = ChatServer.listar_salas()
+
+   Funcional.mostrar_mensaje("\n╔════════════════════════════════════════════════╗")
+     Funcional.mostrar_mensaje("║          USUARIOS POR SALA DE CHAT             ║")
+     Funcional.mostrar_mensaje("╚════════════════════════════════════════════════╝")
+
+    Enum.each(salas, fn sala ->
+      Funcional.mostrar_mensaje("\n Sala: #{sala.nombre} (#{sala.id})")
+       Funcional.mostrar_mensaje("   Total de usuarios: #{length(sala.usuarios)}")
+
+      if Enum.empty?(sala.usuarios) do
+         Funcional.mostrar_mensaje("   (Sin usuarios actualmente)")
+      else
+        Enum.each(sala.usuarios, fn usuario ->
+           Funcional.mostrar_mensaje("   • #{usuario}")
+        end)
+      end
+    end)
+
+     Funcional.mostrar_mensaje("\n════════════════════════════════════════════════\n")
+  end
+
+  @doc """
+  Limpia los mensajes de chat que son más antiguos que un número de días dado.
+
+  Opcionalmente, puede crear un backup antes de realizar la limpieza.
+
+  ## Opciones
+
+    * `:dias` - El número de días. Los mensajes más antiguos que esto serán eliminados.
+      Por defecto es `30`.
+    * `:backup` - Si es `true`, crea un backup antes de la limpieza. Por defecto es `false`.
+
+  ## Ejemplos
+
+      iex> PersistenceManager.limpiar_datos_antiguos(dias: 60, backup: true)
+
+  """
+  def limpiar_datos_antiguos(opts) do
+    dias = Keyword.get(opts, :dias, 30)
+    hacer_backup = Keyword.get(opts, :backup, false)
+
+    if hacer_backup do
+       Funcional.mostrar_mensaje("1. Creando backup antes de la limpieza...")
+      crear_backup()
+    end
+
+     Funcional.mostrar_mensaje("2. Iniciando limpieza de mensajes con más de #{dias} días...")
+    fecha_corte = DateTime.utc_now() |> DateTime.add(-dias * 24 * 3600, :second)
+     Funcional.mostrar_mensaje("   (Se eliminarán mensajes anteriores a #{DateTime.to_date(fecha_corte)})")
+
+    case File.read(@mensajes_path) do
+      {:ok, binario} ->
+        mensajes = :erlang.binary_to_term(binario)
+        mensajes_originales = length(mensajes)
+
+        mensajes_recientes = Enum.filter(mensajes, &(!DateTime.before?(&1.timestamp, fecha_corte)))
+        mensajes_filtrados = length(mensajes_recientes)
+        mensajes_eliminados = mensajes_originales - mensajes_filtrados
+
+        :erlang.term_to_binary(mensajes_recientes) |> File.write!(@mensajes_path)
+
+         Funcional.mostrar_mensaje("✓ Limpieza completada. Mensajes eliminados: #{mensajes_eliminados}")
+        {:ok, %{eliminados: mensajes_eliminados, restantes: mensajes_filtrados}}
+      {:error, :enoent} ->
+         Funcional.mostrar_mensaje("⚠️  No se encontró el archivo de mensajes. No hay nada que limpiar.")
+        {:ok, %{eliminados: 0, restantes: 0}}
+    end
+  end
   # ============================================================
   # FUNCIONES PRIVADAS
   # ============================================================
@@ -273,7 +366,7 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
     archivos = [
       {@mensajes_path, "Mensajes"},
       {@salas_path, "Salas"},
-      {@usuarios_activos_path, "Usuarios"}
+      {@usuarios_salas_csv, "Usuarios por Sala"}
     ]
 
     Enum.each(archivos, fn {path, nombre} ->
@@ -286,39 +379,7 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
         "No existe"
       end
 
-      IO.puts("   • #{nombre}: #{estado}")
+       Funcional.mostrar_mensaje("   • #{nombre}: #{estado}")
     end)
-  end
-
-  @doc """
-  Migra datos antiguos a la nueva estructura (útil para actualizaciones).
-  """
-  def migrar_datos_antiguos(origen_mensajes, origen_salas) do
-    IO.puts("\n🔄 Iniciando migración de datos...")
-
-    # Crear backup del estado actual
-    crear_backup()
-
-    # Leer datos antiguos
-    mensajes_antiguos = case File.read(origen_mensajes) do
-      {:ok, contenido} -> :erlang.binary_to_term(contenido)
-      _ -> %{}
-    end
-
-    salas_antiguas = case File.read(origen_salas) do
-      {:ok, contenido} -> :erlang.binary_to_term(contenido)
-      _ -> %{}
-    end
-
-    # Escribir en la nueva ubicación
-    File.mkdir_p!("priv")
-    File.write!(@mensajes_path, :erlang.term_to_binary(mensajes_antiguos))
-    File.write!(@salas_path, :erlang.term_to_binary(salas_antiguas))
-
-    IO.puts("✓ Migración completada")
-    IO.puts("  • Mensajes migrados: #{map_size(mensajes_antiguos)} canales")
-    IO.puts("  • Salas migradas: #{map_size(salas_antiguas)}")
-
-    :ok
   end
 end
