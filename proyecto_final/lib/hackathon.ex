@@ -54,6 +54,24 @@ defmodule ProyectoFinal.Hackaton do
       ["/project", nombre_equipo] -> handle_project(nombre_equipo)
       ["/join", nombre_equipo] -> handle_join(nombre_equipo)
       ["/chat", nombre_equipo] -> handle_chat(nombre_equipo)
+
+      # --- Comandos de mentoría / consultas ---
+      ["/enviar-consulta", rest] ->
+        # espera: "/enviar-consulta <equipo> <mensaje...>"
+        case String.split(rest, " ", parts: 2) do
+          [nombre_equipo, mensaje] -> handle_enviar_consulta(nombre_equipo, mensaje)
+          _ -> Funcional.mostrar_mensaje("Uso: /enviar-consulta <equipo> <mensaje>")
+        end
+
+      ["/ver-consultas", nombre_equipo] ->
+        handle_ver_consultas(nombre_equipo)
+
+      ["/responder-consulta", nombre_equipo] ->
+        handle_responder_consulta(nombre_equipo)
+
+      ["/historial", nombre_equipo] ->
+        handle_historial(nombre_equipo)
+
       _-> handle_comando_desconocido()
     end
   end
@@ -83,14 +101,17 @@ defmodule ProyectoFinal.Hackaton do
     /create-team            -> Crea un nuevo equipo
     /create-project         -> Crea un nuevo proyecto
     /add-user               -> Agrega un nuevo usuario a un equipo
-    /create-mentor             -> Designa un mentor a un equipo
+    /create-mentor          -> Designa un mentor a un equipo
     /project <equipo>       -> Muestra la informacion referente a el proyecto de un equipo
+    /historial <equipo>     -> Muestra el historial (avances) del proyecto
+    /enviar-consulta <equipo> <mensaje> -> Envía una consulta de un integrante a los mentores
+    /ver-consultas <equipo> -> Lista consultas registradas para el equipo
+    /responder-consulta <equipo> -> Flujo para que un mentor responda una consulta
     /join <equipo>          -> Permite unirse a un equipo
     /chat <equipo>          -> Inicia una sesión de chat con un equipo ya existente
     /help                   -> Muestra esta ayuda
     ----------------------------------------------------------------------------------------
     """)
-
   end
 
   defp handle_project(nombre_equipo) do
@@ -110,6 +131,23 @@ defmodule ProyectoFinal.Hackaton do
         """)
     end
     Funcional.mostrar_mensaje("-------------------------------------------------------------")
+  end
+
+  # Mostrar todo el historial/avances del proyecto
+  defp handle_historial(nombre_equipo) do
+    proyectos = Proyectos_Hackaton.leer_csv(@proyectos_csv_path)
+    case Enum.find(proyectos, fn p -> String.downcase(p.nombre) == String.downcase(nombre_equipo) end) do
+      nil ->
+        Funcional.mostrar_mensaje("No se encontró proyecto para #{nombre_equipo}")
+      proyecto ->
+        if proyecto.avances == [] do
+          Funcional.mostrar_mensaje("No hay avances registrados para #{nombre_equipo}")
+        else
+          Funcional.mostrar_mensaje("Historial de avances para #{nombre_equipo}:")
+          Enum.with_index(proyecto.avances, 1)
+          |> Enum.each(fn {av, idx} -> Funcional.mostrar_mensaje("#{idx}. #{av}") end)
+        end
+    end
   end
 
   defp handle_join(nombre_equipo) do
@@ -273,6 +311,91 @@ defmodule ProyectoFinal.Hackaton do
         ProyectoFinal.Chat.Server.enviar_mensaje(remitente, nombre_equipo, mensaje)
         # Continuar el ciclo de chat
         ciclo_chat(remitente, nombre_equipo)
+    end
+  end
+
+  # ----- Nuevos handlers para consultas / mentoring -----
+
+  # Enviar una consulta: se solicita remitente y el texto (mensaje ya llega desde el comando)
+  defp handle_enviar_consulta(nombre_equipo, mensaje) do
+    equipos = Equipo.leer_csv(@equipos_csv_path)
+
+    case Enum.find(equipos, fn e -> String.downcase(e.nombre) == String.downcase(nombre_equipo) end) do
+      nil ->
+        Funcional.mostrar_mensaje("Error: El equipo #{nombre_equipo} no existe.")
+      _equipo ->
+        remitente = Funcional.input("Ingrese su nombre (quien realiza la consulta): ", :string)
+        texto = "CONSULTA de #{remitente}: #{mensaje}"
+
+        # ------------ CORREGIDO: eliminar path extra ------------
+        case Proyectos_Hackaton.agregar_avance(nombre_equipo, texto) do
+          :ok ->
+            Funcional.mostrar_mensaje("Consulta registrada y enviada a los mentores de #{nombre_equipo}.")
+          {:error, :not_found} ->
+            Funcional.mostrar_mensaje("No se encontró el proyecto para el equipo #{nombre_equipo}. Cree el proyecto primero.")
+          {:error, reason} ->
+            Funcional.mostrar_mensaje("Error al registrar la consulta: #{inspect(reason)}")
+        end
+    end
+  end
+
+  # Ver consultas: lista avaces que comienzan por "CONSULTA"
+  defp handle_ver_consultas(nombre_equipo) do
+    proyectos = Proyectos_Hackaton.leer_csv(@proyectos_csv_path)
+
+    case Enum.find(proyectos, fn p -> String.downcase(p.nombre) == String.downcase(nombre_equipo) end) do
+      nil ->
+        Funcional.mostrar_mensaje("No se encontró proyecto para #{nombre_equipo}")
+      proyecto ->
+        consultas = Enum.filter(proyecto.avances, fn av -> String.starts_with?(av, "CONSULTA") end)
+        if consultas == [] do
+          Funcional.mostrar_mensaje("No hay consultas registradas para #{nombre_equipo}")
+        else
+          Funcional.mostrar_mensaje("Consultas para #{nombre_equipo}:")
+          Enum.with_index(consultas, 1)
+          |> Enum.each(fn {c, i} -> Funcional.mostrar_mensaje("#{i}. #{c}") end)
+        end
+    end
+  end
+
+  # Responder una consulta: flujo interactivo (escoge índice, pide mentor y respuesta)
+  defp handle_responder_consulta(nombre_equipo) do
+    proyectos = Proyectos_Hackaton.leer_csv(@proyectos_csv_path)
+
+    case Enum.find(proyectos, fn p -> String.downcase(p.nombre) == String.downcase(nombre_equipo) end) do
+      nil ->
+        Funcional.mostrar_mensaje("No se encontró proyecto para #{nombre_equipo}")
+      proyecto ->
+        consultas = Enum.filter(proyecto.avances, fn av -> String.starts_with?(av, "CONSULTA") end)
+
+        if consultas == [] do
+          Funcional.mostrar_mensaje("No hay consultas pendientes para #{nombre_equipo}")
+        else
+          Funcional.mostrar_mensaje("Consultas pendientes:")
+          Enum.with_index(consultas, 1)
+          |> Enum.each(fn {c, i} -> Funcional.mostrar_mensaje("#{i}. #{c}") end)
+
+          idx_str = Funcional.input("Ingrese el número de la consulta a responder: ", :string)
+          idx = try do String.to_integer(idx_str) rescue _ -> -1 end
+
+          if idx < 1 or idx > length(consultas) do
+            Funcional.mostrar_mensaje("Índice inválido.")
+          else
+            mentor = Funcional.input("Ingrese el nombre del mentor que responde: ", :string)
+            respuesta = Funcional.input("Ingrese la respuesta del mentor: ", :string)
+            texto_respuesta = "RESPUESTA de #{mentor}: #{respuesta}"
+
+            # ------------ CORREGIDO: eliminar path extra ------------
+            case Proyectos_Hackaton.agregar_avance(nombre_equipo, texto_respuesta) do
+              :ok ->
+                Funcional.mostrar_mensaje("Respuesta registrada en el historial del proyecto.")
+              {:error, :not_found} ->
+                Funcional.mostrar_mensaje("No se encontró el proyecto para el equipo #{nombre_equipo}.")
+              {:error, reason} ->
+                Funcional.mostrar_mensaje("Error al guardar la respuesta: #{inspect(reason)}")
+            end
+          end
+        end
     end
   end
 
