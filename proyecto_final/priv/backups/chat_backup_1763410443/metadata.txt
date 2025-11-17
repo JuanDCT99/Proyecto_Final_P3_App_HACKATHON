@@ -1,0 +1,1 @@
+%{fecha_backup: "2025-11-17 20:14:03.248000Z", archivos_respaldados: 3}

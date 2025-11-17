@@ -10,7 +10,9 @@ defmodule ProyectoFinal.Application do
     children = [
       # Starts a worker by calling: ProyectoFinal.Worker.start_link(arg)
       # {ProyectoFinal.Worker, arg}
-      {ProyectoFinal.Chat.Server, []}
+
+      # Inicia nuestro nuevo servidor de chat cuando la aplicación arranca.
+      ProyectoFinal.Chat.ChatServer
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

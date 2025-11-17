@@ -3,7 +3,7 @@
 defmodule ProyectoFinal.Domain.Persona do
   alias ProyectoFinal.Services.Util, as: Funcional
 
-  defstruct nombre: "", identificacion: "", edad: "", equipo: ""
+  defstruct nombre: "", identificacion: "", edad: "", equipo: "", tema: ""
 
 
 
@@ -12,17 +12,18 @@ defmodule ProyectoFinal.Domain.Persona do
     identificacion = Funcional.input("Ingrese su identificacion: ", :string)
     edad = Funcional.input("Ingrese su edad: ", :string)
     equipo = Funcional.input("Ingrese el nombre de su equipo: ", :string)
-    crear(nombre, identificacion, edad, equipo)
+    tema = Funcional.input("Ingrese el tema de interes: ", :string)
+    crear(nombre, identificacion, edad, equipo, tema)
   end
 
-  def crear(nombre, identificacion, edad, equipo) do
-    %__MODULE__{nombre: nombre, identificacion: identificacion, edad: edad, equipo: equipo}
+  def crear(nombre, identificacion, edad, equipo, tema) do
+    %__MODULE__{nombre: nombre, identificacion: identificacion, edad: edad, equipo: equipo, tema: tema}
   end
 
   def escribir_csv(lista_personas, nombre_archivo) do
-    header = ["Nombre", "Identificacion", "Edad", "Equipo"]
-    rows = Enum.map(lista_personas, fn %__MODULE__{nombre: nombre, identificacion: identificacion, edad: edad, equipo: equipo} ->
-      [nombre, identificacion, edad, equipo]
+    header = ["Nombre", "Identificacion", "Edad", "Equipo", "Tema"]
+    rows = Enum.map(lista_personas, fn %__MODULE__{nombre: nombre, identificacion: identificacion, edad: edad, equipo: equipo, tema: tema} ->
+      [nombre, identificacion, edad, equipo, tema]
     end)
     Adapters.CSVAdapter.write(nombre_archivo, header, rows)
   end
@@ -31,12 +32,13 @@ defmodule ProyectoFinal.Domain.Persona do
     case Adapters.CSVAdapter.read(nombre_archivo) do
       {:ok, {_header, rows}} ->
         Enum.map(rows, fn
-          [nombre, identificacion, edad, equipo] ->
+          [nombre, identificacion, edad, equipo, tema] ->
             %__MODULE__{
               nombre: String.trim(nombre),
               identificacion: String.trim(identificacion),
               edad: String.trim(edad),
-              equipo: String.trim(equipo)
+              equipo: String.trim(equipo),
+              tema: String.trim(tema)
             }
           _ -> nil
         end)
