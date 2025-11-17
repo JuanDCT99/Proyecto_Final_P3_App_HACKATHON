@@ -1,5 +1,5 @@
 defmodule Cookie do
-  @longitud_llave 426
+  @longitud_llave 22
 
   def main() do
     :crypto.strong_rand_bytes(@longitud_llave)

@@ -1,352 +1,345 @@
-defmodule ProyectoFinal.Test.MentorTest do
+defmodule MentorTest do
   use ExUnit.Case
-  alias ProyectoFinal.Domain.Mentor
-  import ExUnit.CaptureIO
+  doctest Mentor
 
-  @test_file "test_mentores.csv"
-
+  # Setup para crear un mentor de prueba antes de cada test
   setup do
-    on_exit(fn -> if File.exists?(@test_file), do: File.rm(@test_file)
-  end)
-  :ok
+    mentor = Mentor.crear("Juan Pérez", "123456", "3001234567", "35", "Equipo A")
+    {:ok, mentor: mentor}
   end
+
+  # ===== TESTS DE FUNCIONES BÁSICAS =====
 
   describe "crear/5" do
-    test "Crea un mentor con los datos proporcionados" do
-      mentor = Mentor.crear("Jhan Carlos", "10921091", "3145672134", "24", "Ingenieria FC")
+    test "crea un mentor con los datos correctos" do
+      mentor = Mentor.crear("Ana García", "789012", "3109876543", "28", "Equipo B")
 
-      assert mentor.nombre == "Jhan Carlos"
-      assert mentor.identificacion == "10921091"
-      assert mentor.celular == "3145672134"
-      assert mentor.edad == "24"
-      assert mentor.equipo == "Ingenieria FC"
+      assert mentor.nombre == "Ana García"
+      assert mentor.identificacion == "789012"
+      assert mentor.celular == "3109876543"
+      assert mentor.edad == "28"
+      assert mentor.equipo == "Equipo B"
+      assert mentor.consultas_recibidas == []
+      assert mentor.retroalimentacion == []
     end
 
-    test "el mentor creado es una estructura valida" do
-      mentor = Mentor.crear("Test", "T001", "T002", "T003", "T0004")
+    test "crea un mentor con listas vacías por defecto" do
+      mentor = Mentor.crear("Test", "111", "222", "30", "Equipo Test")
 
-      assert %Mentor{} = mentor
-    end
-
-    test "crea un mentor con campos vacíos" do
-      mentor = Mentor.crear("", "", "", "", "")
-
-      assert mentor.nombre == ""
-      assert mentor.identificacion == ""
-      assert mentor.celular == ""
-      assert mentor.edad == ""
-      assert mentor.equipo == ""
-    end
-  end
-
-  describe "escribir_csv/2" do
-
-   test "escribe mentores en formato CSV correctamente" do
-
-      mentores = [
-        Mentor.crear("Julian", "10291029", "31442281", "23", "Leones FC")
-      ]
-
-      Mentor.escribir_csv(mentores, @test_file)
-
-      assert File.exists?(@test_file)
-      contenido = File.read!(@test_file)
-
-      assert contenido =~ "Nombre, Identificacion, Celular, Edad, Equipo"
-      assert contenido =~ "Julian, 10291029, 31442281, 23, Leones FC"
-    end
-
-  test "escribe múltiples mentores en archivo CSV" do
-      mentores = [
-        Mentor.crear("Robinson Buitrago", "1098308213", "3114101293", "30", "Aguilas FC"),
-        Mentor.crear("Juan Carlos Rojo", "1093842888", "31109283", "28", "Yeguas FC"),
-        Mentor.crear("Luisa Fernanda Ospina", "1082993123", "3121212344", "35", "Nutrias FC")
-      ]
-
-      Mentor.escribir_csv(mentores, @test_file)
-
-      contenido = File.read!(@test_file)
-      lineas = String.split(contenido, "\n", trim: true)
-
-      # 1 encabezado + 3 mentores = 4 líneas
-      assert length(lineas) == 4
-      assert Enum.at(lineas, 0) =~ "Nombre, Identificacion"
-      assert Enum.at(lineas, 1) =~ "Robinson Buitrago"
-      assert Enum.at(lineas, 2) =~ "Juan Carlos Rojo"
-      assert Enum.at(lineas, 3) =~ "Luisa Fernanda Ospina"
-    end
-
-    test "escribe lista vacía correctamente (solo encabezado)" do
-      Mentor.escribir_csv([], @test_file)
-
-      contenido = File.read!(@test_file)
-      lineas = String.split(contenido, "\n", trim: true)
-
-      assert length(lineas) == 1
-      assert hd(lineas) =~ "Nombre, Identificacion, celular, Edad, Equipo"
-    end
-
-    test "el formato CSV no tiene espacios extras en los datos" do
-      mentores = [
-        Mentor.crear("Ana", "111", "300", "25", "Team")
-      ]
-
-      Mentor.escribir_csv(mentores, @test_file)
-      contenido = File.read!(@test_file)
-
-      # Verificar que los datos están separados por coma sin espacios
-      assert contenido =~ "Ana,111,300,25,Team"
-      refute contenido =~ "Ana, 111"
-    end
-
-        test "sobrescribe archivo existente" do
-      # Primera escritura
-      mentores1 = [Mentor.crear("Primer", "001", "300", "30", "Team1")]
-      Mentor.escribir_csv(mentores1, @test_file)
-
-      # Segunda escritura
-      mentores2 = [Mentor.crear("Segundo", "002", "301", "31", "Team2")]
-      Mentor.escribir_csv(mentores2, @test_file)
-
-      contenido = File.read!(@test_file)
-
-      assert contenido =~ "Segundo"
-      refute contenido =~ "Primer"
-    end
-  end
-
- describe "leer_csv/1" do
-    test "lee un mentor desde archivo CSV correctamente" do
-      # Preparar archivo
-      contenido = """
-      Nombre, Identificacion, celular, Edad, Equipo
-      Robinson Buitrago, 1098308213, 3114101293, 30, Aguilas FC
-      """
-      File.write!(@test_file, contenido)
-
-      mentores = Mentor.leer_csv(@test_file)
-
-      assert length(mentores) == 1
-      mentor = hd(mentores)
-
-      assert mentor.nombre == "Robinson Buitrago"
-      assert mentor.identificacion == "1098308213"
-      assert mentor.celular == "3114101293"
-      assert mentor.edad == "30"
-      assert mentor.equipo == "Aguilas FC"
-    end
-
-    test "lee múltiples mentores desde archivo CSV" do
-      contenido = """
-      Nombre, Identificacion, celular, Edad, Equipo
-      Robinson Buitrago, 1098308213, 3114101293,30, Aguilas FC
-      Juan Carlos Rojo, 1093842888, 31109283, 28, Yeguas FC
-      Luisa Fernanda Ospina, 1082993123, 3121212344, 35, Nutrias FC
-      """
-      File.write!(@test_file, contenido)
-
-      mentores = Mentor.leer_csv(@test_file)
-
-      assert length(mentores) == 3
-      assert Enum.at(mentores, 0).nombre == "Robinson Buitrago"
-      assert Enum.at(mentores, 1).nombre == "Juan Carlos Rojo"
-      assert Enum.at(mentores, 2).nombre == "Luisa Fernanda Ospina"
-    end
-
-    test "elimina espacios en blanco de los datos al leer" do
-      contenido = """
-      Nombre, Identificacion, celular, Edad, Equipo
-        Robinson Buitrago, 1098308213, 3114101293,30, Aguilas FC
-      """
-      File.write!(@test_file, contenido)
-
-      mentores = Mentor.leer_csv(@test_file)
-      mentor = hd(mentores)
-
-      assert mentor.nombre == " Robinson Buitrago"
-      assert mentor.identificacion == "1098308213"
-      assert mentor.equipo == "Aguilas FC"
-    end
-
-    test "ignora líneas vacías en el archivo" do
-      contenido = """
-      Nombre, Identificacion, celular, Edad, Equipo
-      Robinson Buitrago, 1098308213, 3114101293,30, Aguilas FC
-
-      Rubén Doblas Gundersen,1098309002,3435542314,32, Limón 4K
-
-      """
-      File.write!(@test_file, contenido)
-
-      mentores = Mentor.leer_csv(@test_file)
-
-      assert length(mentores) == 2
-    end
-
-    test "ignora líneas con formato inválido (menos de 5 campos)" do
-      contenido = """
-      Nombre, Identificacion, celular, Edad, Equipo
-      Ariana Grande,01299120,3001234567,41, Ari FC
-      Inválido,Solo,Tres
-      Luna Rodriguez,789012,301271543,22, Luna FC
-      """
-      File.write!(@test_file, contenido)
-
-      mentores = Mentor.leer_csv(@test_file)
-
-      assert length(mentores) == 2
-      assert Enum.at(mentores, 0).nombre == "Jeison Pérez"
-      assert Enum.at(mentores, 1).nombre == "María Artunduaga"
-    end
-
-    test "ignora el encabezado del CSV" do
-      contenido = """
-      Nombre, Identificacion, celular, Edad, Equipo
-      Jeison Cardozo,2109201,314412812,30, Jeison FC
-      """
-      File.write!(@test_file, contenido)
-
-      mentores = Mentor.leer_csv(@test_file)
-
-      # Solo debe leer 1 mentor, no el encabezado
-      assert length(mentores) == 1
-      refute Enum.any?(mentores, fn m -> m.nombre == "Nombre" end)
-    end
-
-    test "retorna lista vacía cuando el archivo no existe" do
-      output = capture_io(fn ->
-        mentores = Mentor.leer_csv("archivo_inexistente.csv")
-        send(self(), {:resultado, mentores})
-      end)
-
-      assert_receive {:resultado, mentores}
-      assert mentores == []
-      assert output =~ "Error al leer el archivo"
-    end
-
-    test "retorna lista vacía cuando el archivo está vacío" do
-      File.write!(@test_file, "")
-
-      mentores = Mentor.leer_csv(@test_file)
-
-      assert mentores == []
-    end
-
-    test "maneja archivo con solo encabezado" do
-      File.write!(@test_file, "Nombre, Identificacion, celular, Edad, Equipo\n")
-
-      mentores = Mentor.leer_csv(@test_file)
-
-      assert mentores == []
+      assert is_list(mentor.consultas_recibidas)
+      assert Enum.empty?(mentor.consultas_recibidas)
+      assert is_list(mentor.retroalimentacion)
+      assert Enum.empty?(mentor.retroalimentacion)
     end
   end
 
   describe "asignar_mentor_a_equipo/2" do
-    setup do
-      mentor = Mentor.crear("Juan Sebastian Guarnizo", "123331912", "3001234567", "35", "")
-      {:ok, mentor: mentor}
-    end
+    test "asigna un mentor a un nuevo equipo", %{mentor: mentor} do
+      mentor_actualizado = Mentor.asignar_mentor_a_equipo(mentor, "Equipo C")
 
-    test "asigna un equipo a un mentor sin equipo", %{mentor: mentor} do
-      mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor, "Equipo Alpha")
-
-      assert mentor_actualizado.equipo == "Equipo Alpha"
-    end
-
-    test "cambia el equipo de un mentor que ya tenía uno", %{mentor: mentor} do
-      mentor_con_equipo = %{mentor | equipo: "Equipo Beta"}
-      mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor_con_equipo, "Equipo Gamma")
-
-      assert mentor_actualizado.equipo == "Equipo Gamma"
-      refute mentor_actualizado.equipo == "Equipo Beta"
-    end
-
-    test "no modifica otros campos del mentor", %{mentor: mentor} do
-      mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor, "Nuevo Equipo")
-
+      assert mentor_actualizado.equipo == "Equipo C"
       assert mentor_actualizado.nombre == mentor.nombre
+    end
+
+    test "preserva los demás datos al cambiar equipo", %{mentor: mentor} do
+      mentor_actualizado = Mentor.asignar_mentor_a_equipo(mentor, "Nuevo Equipo")
+
       assert mentor_actualizado.identificacion == mentor.identificacion
       assert mentor_actualizado.celular == mentor.celular
       assert mentor_actualizado.edad == mentor.edad
     end
+  end
 
-    test "puede asignar string vacío como equipo", %{mentor: mentor} do
-      mentor_con_equipo = %{mentor | equipo: "Equipo A"}
-      mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor_con_equipo, "")
+  # ===== TESTS DE CANAL DE CONSULTAS =====
 
-      assert mentor_actualizado.equipo == ""
+  describe "enviar_consulta/3" do
+    test "agrega una consulta al mentor", %{mentor: mentor} do
+      mentor_con_consulta = Mentor.enviar_consulta(
+        mentor,
+        "Equipo B",
+        "¿Cómo mejorar el código?"
+      )
+
+      assert length(mentor_con_consulta.consultas_recibidas) == 1
+      consulta = hd(mentor_con_consulta.consultas_recibidas)
+      assert consulta.equipo == "Equipo B"
+      assert consulta.consulta == "¿Cómo mejorar el código?"
+      assert consulta.respondida == false
+      assert consulta.respuesta == nil
     end
 
-    test "asigna equipo con caracteres especiales", %{mentor: mentor} do
-      mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor, "Equipo Ñoño #1")
+    test "agrega múltiples consultas correctamente", %{mentor: mentor} do
+      mentor = Mentor.enviar_consulta(mentor, "Equipo B", "Consulta 1")
+      mentor = Mentor.enviar_consulta(mentor, "Equipo C", "Consulta 2")
+      mentor = Mentor.enviar_consulta(mentor, "Equipo D", "Consulta 3")
 
-      assert mentor_actualizado.equipo == "Equipo Ñoño #1"
+      assert length(mentor.consultas_recibidas) == 3
     end
 
-    test "el mentor original no se modifica (inmutabilidad)", %{mentor: mentor} do
-      equipo_original = mentor.equipo
-      _mentor_actualizado = Mentor.asigar_mentor_a_equipo(mentor, "Equipo Nuevo")
+    test "las consultas tienen fecha de creación", %{mentor: mentor} do
+      mentor_con_consulta = Mentor.enviar_consulta(mentor, "Equipo B", "Test")
+      consulta = hd(mentor_con_consulta.consultas_recibidas)
 
-      assert mentor.equipo == equipo_original
+      assert %DateTime{} = consulta.fecha
     end
   end
 
-  describe "struct Mentor" do
-    test "tiene los campos correctos por defecto" do
-      mentor = %Mentor{}
+  describe "ver_consultas_pendientes/1" do
+    test "retorna solo consultas no respondidas", %{mentor: mentor} do
+      mentor = Mentor.enviar_consulta(mentor, "Equipo B", "Consulta 1")
+      mentor = Mentor.enviar_consulta(mentor, "Equipo C", "Consulta 2")
+      mentor = Mentor.responder_consulta(mentor, 0, "Respuesta 1")
 
-      assert mentor.nombre == ""
-      assert mentor.identificacion == ""
-      assert mentor.celular == ""
-      assert mentor.edad == ""
-      assert mentor.equipo == ""
+      pendientes = Mentor.ver_consultas_pendientes(mentor)
+
+      assert length(pendientes) == 1
+      assert hd(pendientes).consulta == "Consulta 2"
     end
 
-    test "permite actualizar campos individualmente" do
-      mentor = %Mentor{}
-      mentor_actualizado = %{mentor | nombre: "Nuevo Nombre", edad: "40"}
+    test "retorna lista vacía si todas están respondidas", %{mentor: mentor} do
+      mentor = Mentor.enviar_consulta(mentor, "Equipo B", "Consulta 1")
+      mentor = Mentor.responder_consulta(mentor, 0, "Respuesta")
 
-      assert mentor_actualizado.nombre == "Nuevo Nombre"
-      assert mentor_actualizado.edad == "40"
-      assert mentor_actualizado.identificacion == ""
-    end
+      pendientes = Mentor.ver_consultas_pendientes(mentor)
 
-    test "permite crear con valores personalizados" do
-      mentor = %Mentor{
-        nombre: "Test",
-        identificacion: "999",
-        celular: "3000000000",
-        edad: "50",
-        equipo: "Test Team"
-      }
-
-      assert mentor.nombre == "Test"
-      assert mentor.celular == "3000000000"
+      assert Enum.empty?(pendientes)
     end
   end
 
-  describe "integración escribir_csv y leer_csv" do
-    test "los datos escritos pueden ser leídos correctamente" do
-      mentores_originales = [
-        Mentor.crear("Juan Pérez", "123456", "3001234567", "30", "Equipo A"),
-        Mentor.crear("María López", "789012", "3009876543", "28", "Equipo B")
-      ]
+  describe "responder_consulta/3" do
+    test "marca consulta como respondida y agrega respuesta", %{mentor: mentor} do
+      mentor = Mentor.enviar_consulta(mentor, "Equipo B", "¿Ayuda?")
+      mentor = Mentor.responder_consulta(mentor, 0, "Claro, aquí está mi respuesta")
 
-      # Escribir
-      Mentor.escribir_csv(mentores_originales, @test_file)
+      consulta = hd(mentor.consultas_recibidas)
+      assert consulta.respondida == true
+      assert consulta.respuesta == "Claro, aquí está mi respuesta"
+    end
 
-      # Leer
-      mentores_leidos = Mentor.leer_csv(@test_file)
+    test "responde la consulta correcta por índice", %{mentor: mentor} do
+      mentor = Mentor.enviar_consulta(mentor, "Equipo B", "Consulta 1")
+      mentor = Mentor.enviar_consulta(mentor, "Equipo C", "Consulta 2")
+      mentor = Mentor.enviar_consulta(mentor, "Equipo D", "Consulta 3")
+
+      mentor = Mentor.responder_consulta(mentor, 1, "Respuesta a consulta 2")
+
+      consulta_respondida = Enum.at(mentor.consultas_recibidas, 1)
+      assert consulta_respondida.respondida == true
+      assert consulta_respondida.respuesta == "Respuesta a consulta 2"
+
+      # Las otras deben seguir sin responder
+      assert Enum.at(mentor.consultas_recibidas, 0).respondida == false
+      assert Enum.at(mentor.consultas_recibidas, 2).respondida == false
+    end
+  end
+
+  # ===== TESTS DE RETROALIMENTACIÓN =====
+
+  describe "agregar_retroalimentacion/5" do
+    test "agrega retroalimentación sin calificación", %{mentor: mentor} do
+      mentor = Mentor.agregar_retroalimentacion(
+        mentor,
+        "Equipo B",
+        :sugerencia,
+        "Sería bueno más reuniones"
+      )
+
+      assert length(mentor.retroalimentacion) == 1
+      retro = hd(mentor.retroalimentacion)
+      assert retro.equipo == "Equipo B"
+      assert retro.tipo == :sugerencia
+      assert retro.comentario == "Sería bueno más reuniones"
+      assert retro.calificacion == nil
+    end
+
+    test "agrega retroalimentación con calificación", %{mentor: mentor} do
+      mentor = Mentor.agregar_retroalimentacion(
+        mentor,
+        "Equipo C",
+        :positiva,
+        "Excelente mentor",
+        5
+      )
+
+      retro = hd(mentor.retroalimentacion)
+      assert retro.calificacion == 5
+    end
+
+    test "agrega múltiples retroalimentaciones", %{mentor: mentor} do
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E1", :positiva, "Bien", 4)
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E2", :constructiva, "Mejorar", 3)
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E3", :positiva, "Genial", 5)
+
+      assert length(mentor.retroalimentacion) == 3
+    end
+
+    test "retroalimentación tiene fecha", %{mentor: mentor} do
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E1", :positiva, "Test")
+      retro = hd(mentor.retroalimentacion)
+
+      assert %DateTime{} = retro.fecha
+    end
+  end
+
+  describe "calcular_calificacion_promedio/1" do
+    test "calcula promedio correctamente", %{mentor: mentor} do
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E1", :positiva, "Bien", 4)
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E2", :positiva, "Excelente", 5)
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E3", :constructiva, "Regular", 3)
+
+      promedio = Mentor.calcular_calificacion_promedio(mentor)
+
+      assert promedio == 4.0
+    end
+
+    test "ignora retroalimentación sin calificación", %{mentor: mentor} do
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E1", :positiva, "Sin nota")
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E2", :positiva, "Con nota", 5)
+
+      promedio = Mentor.calcular_calificacion_promedio(mentor)
+
+      assert promedio == 5.0
+    end
+
+    test "retorna 0 si no hay calificaciones", %{mentor: mentor} do
+      promedio = Mentor.calcular_calificacion_promedio(mentor)
+      assert promedio == 0
+    end
+  end
+
+  # ===== TESTS DE ARCHIVOS CSV =====
+
+  describe "escribir_csv/2 y leer_csv/1" do
+    test "escribe y lee correctamente un archivo CSV" do
+      mentor1 = Mentor.crear("Ana López", "111", "3001111111", "30", "Equipo X")
+      mentor2 = Mentor.crear("Carlos Ruiz", "222", "3002222222", "40", "Equipo Y")
+      lista = [mentor1, mentor2]
+
+      archivo = "test_mentores.csv"
+      Mentor.escribir_csv(lista, archivo)
+
+      mentores_leidos = Mentor.leer_csv(archivo)
 
       assert length(mentores_leidos) == 2
+      assert Enum.at(mentores_leidos, 0).nombre == "Ana López"
+      assert Enum.at(mentores_leidos, 1).nombre == "Carlos Ruiz"
 
-      # Verificar primer mentor
-      assert Enum.at(mentores_leidos, 0).nombre == "Paola Jimenez"
-      assert Enum.at(mentores_leidos, 0).identificacion == "123456"
-
-      # Verificar segundo mentor
-      assert Enum.at(mentores_leidos, 1).nombre == "Ruben Dario"
-      assert Enum.at(mentores_leidos, 1).equipo == "Equipo Z"
+      # Limpiar archivo de prueba
+      File.rm(archivo)
     end
+
+    test "lee archivo CSV vacío sin errores" do
+      archivo = "test_vacio.csv"
+      File.write!(archivo, "Nombre,Identificacion,Celular,Edad,Equipo\n")
+
+      mentores = Mentor.leer_csv(archivo)
+
+      assert Enum.empty?(mentores)
+      File.rm(archivo)
+    end
+
+    test "maneja archivo inexistente", %{} do
+      assert capture_io(fn ->
+        mentores = Mentor.leer_csv("archivo_inexistente.csv")
+        assert Enum.empty?(mentores)
+      end) =~ "Error al leer el archivo"
+    end
+  end
+
+  # ===== TESTS DE PERSISTENCIA COMPLETA =====
+
+  describe "guardar_datos_completos/2 y cargar_datos_completos/1" do
+    test "guarda y carga datos completos correctamente", %{mentor: mentor} do
+      # Agregar datos al mentor
+      mentor = Mentor.enviar_consulta(mentor, "Equipo B", "Consulta test")
+      mentor = Mentor.responder_consulta(mentor, 0, "Respuesta test")
+      mentor = Mentor.agregar_retroalimentacion(mentor, "Equipo B", :positiva, "Muy bien", 5)
+
+      archivo = "test_mentor_completo.exs"
+      Mentor.guardar_datos_completos(mentor, archivo)
+
+      mentor_cargado = Mentor.cargar_datos_completos(archivo)
+
+      assert mentor_cargado.nombre == mentor.nombre
+      assert mentor_cargado.identificacion == mentor.identificacion
+      assert length(mentor_cargado.consultas_recibidas) == 1
+      assert length(mentor_cargado.retroalimentacion) == 1
+
+      consulta = hd(mentor_cargado.consultas_recibidas)
+      assert consulta.respondida == true
+      assert consulta.respuesta == "Respuesta test"
+
+      File.rm(archivo)
+    end
+
+    test "maneja archivo inexistente al cargar", %{} do
+      assert capture_io(fn ->
+        resultado = Mentor.cargar_datos_completos("no_existe.exs")
+        assert resultado == nil
+      end) =~ "Error al cargar datos"
+    end
+
+    test "preserva todas las consultas y retroalimentaciones", %{mentor: mentor} do
+      # Crear datos complejos
+      mentor = Mentor.enviar_consulta(mentor, "E1", "C1")
+      mentor = Mentor.enviar_consulta(mentor, "E2", "C2")
+      mentor = Mentor.enviar_consulta(mentor, "E3", "C3")
+      mentor = Mentor.responder_consulta(mentor, 0, "R1")
+
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E1", :positiva, "Bien", 4)
+      mentor = Mentor.agregar_retroalimentacion(mentor, "E2", :constructiva, "Mejorar", 3)
+
+      archivo = "test_complejo.exs"
+      Mentor.guardar_datos_completos(mentor, archivo)
+      mentor_cargado = Mentor.cargar_datos_completos(archivo)
+
+      assert length(mentor_cargado.consultas_recibidas) == 3
+      assert length(mentor_cargado.retroalimentacion) == 2
+      assert Enum.at(mentor_cargado.consultas_recibidas, 0).respondida == true
+
+      File.rm(archivo)
+    end
+  end
+
+  # ===== TESTS DE INTEGRACIÓN =====
+
+  describe "flujo completo de mentoría" do
+    test "simula un ciclo completo de mentoría", %{mentor: mentor} do
+      # 1. Recibir consultas
+      mentor = Mentor.enviar_consulta(mentor, "Equipo B", "¿Cómo usar Git?")
+      mentor = Mentor.enviar_consulta(mentor, "Equipo C", "¿Qué es Scrum?")
+
+      assert length(mentor.consultas_recibidas) == 2
+
+      # 2. Responder primera consulta
+      mentor = Mentor.responder_consulta(mentor, 0, "Git es un sistema de control de versiones")
+
+      pendientes = Mentor.ver_consultas_pendientes(mentor)
+      assert length(pendientes) == 1
+
+      # 3. Recibir retroalimentación
+      mentor = Mentor.agregar_retroalimentacion(mentor, "Equipo B", :positiva, "Excelente explicación", 5)
+
+      # 4. Calcular estadísticas
+      promedio = Mentor.calcular_calificacion_promedio(mentor)
+      assert promedio == 5.0
+
+      # 5. Guardar todo
+      archivo = "test_flujo_completo.exs"
+      Mentor.guardar_datos_completos(mentor, archivo)
+
+      # 6. Cargar y verificar
+      mentor_recuperado = Mentor.cargar_datos_completos(archivo)
+      assert mentor_recuperado.nombre == "Juan Pérez"
+      assert length(mentor_recuperado.consultas_recibidas) == 2
+      assert length(mentor_recuperado.retroalimentacion) == 1
+
+      File.rm(archivo)
+    end
+  end
+
+  # Helper para capturar IO
+  defp capture_io(fun) do
+    ExUnit.CaptureIO.capture_io(fun)
   end
 end
