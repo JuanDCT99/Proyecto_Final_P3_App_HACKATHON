@@ -1,4 +1,3 @@
-#Logica para la creación de proyectos
 
 defmodule ProyectoFinal.Domain.Proyectos_Hackaton do
   alias ProyectoFinal.Services.Util, as: Funcional
@@ -51,7 +50,6 @@ defmodule ProyectoFinal.Domain.Proyectos_Hackaton do
     end
   end
 
-  # ============ NUEVAS FUNCIONES AGREGADAS ============
 
   @doc """
   Agrega un avance al proyecto de un equipo específico.

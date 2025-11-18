@@ -2,18 +2,14 @@
 
 defmodule ProyectoFinal.Domain.Mensaje do
   @moduledoc"""
-
   Define la estructura, la funcionalidad y la logica de un mensaje
-
   """
 
   defstruct remitente: "", destinatario: "", contenido: "", timestamp: nil
 
 
   @doc"""
-
   Crear una nueva estructura de mensaje
-
   """
 
   def crear(remitente, destinatario, contenido) do
@@ -26,9 +22,7 @@ defmodule ProyectoFinal.Domain.Mensaje do
   end
 
   @doc"""
-
   Escribe una lista de mensajes y lo pone en un archivo CSV
-
   """
 
 
@@ -43,9 +37,7 @@ defmodule ProyectoFinal.Domain.Mensaje do
   end
 
   @doc"""
-
   Lee una lista de mensajes desde un archivo CSV
-
   """
 
   def leer_csv(nombre_archivo) do

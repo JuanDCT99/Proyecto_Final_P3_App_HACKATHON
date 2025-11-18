@@ -12,9 +12,7 @@ defmodule ProyectoFinal.Chat.ChatServer do
   @usuarios_salas_csv "priv/chat_usuarios_salas.csv"
   @auto_save_interval 300_000
 
-  # ============================================================
   # API DEL CLIENTE
-  # ============================================================
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, :ok, opts ++ [name: __MODULE__])
@@ -67,9 +65,7 @@ defmodule ProyectoFinal.Chat.ChatServer do
     GenServer.call(__MODULE__, :obtener_estadisticas)
   end
 
-  # ============================================================
   # CALLBACKS
-  # ============================================================
 
   @impl true
   def init(:ok) do
@@ -315,10 +311,7 @@ defmodule ProyectoFinal.Chat.ChatServer do
     {:noreply, nuevo_estado}
   end
 
-  # ============================================================
   # FUNCIONES PRIVADAS DE PERSISTENCIA
-  # ============================================================
-
   defp cargar_estado_inicial() do
     mensajes = cargar_mensajes()
     salas = cargar_salas()
@@ -376,9 +369,7 @@ defmodule ProyectoFinal.Chat.ChatServer do
     File.write!(@salas_path, contenido)
   end
 
-  # ============================================================
   # PERSISTENCIA DE USUARIOS POR SALA EN CSV
-  # ============================================================
 
   defp cargar_usuarios_salas() do
     case File.read(@usuarios_salas_csv) do

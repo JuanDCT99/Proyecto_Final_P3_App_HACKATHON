@@ -67,23 +67,6 @@ defmodule ProyectoFinal.Domain.Equipo do
   @doc """
   Agrupa personas por tema/afinidad y crea equipos automáticamente.
 
-  ## Parámetros
-  - personas: Lista de structs Persona que deben tener un campo `tema` o similar
-  - max_integrantes: Número máximo de integrantes por equipo (por defecto 5)
-  - prefijo_nombre: Prefijo para el nombre de los equipos generados (por defecto "Equipo")
-
-  ## Ejemplos
-
-      iex> personas = [
-      ...>   %{nombre: "Juan", tema: "IA"},
-      ...>   %{nombre: "María", tema: "IA"},
-      ...>   %{nombre: "Pedro", tema: "Web"}
-      ...> ]
-      iex> Equipo.crear_equipos_por_afinidad(personas, fn p -> p.tema end)
-      [
-        %Equipo{nombre: "Equipo IA 1", tema: "IA", integrantes: ["Juan", "María"], ...},
-        %Equipo{nombre: "Equipo Web 1", tema: "Web", integrantes: ["Pedro"], ...}
-      ]
   """
   def crear_equipos_por_afinidad(personas, obtener_tema_fn, max_integrantes \\ 5, prefijo_nombre \\ "Equipo") do
     personas
@@ -105,12 +88,6 @@ defmodule ProyectoFinal.Domain.Equipo do
   @doc """
   Sugiere equipos balanceados basándose en temas/afinidades de las personas.
   Intenta crear equipos de tamaño similar con diversidad de temas.
-
-  ## Parámetros
-  - personas: Lista de personas
-  - obtener_tema_fn: Función para extraer el tema de cada persona
-  - num_equipos: Número de equipos a crear
-  - prefijo_nombre: Prefijo para nombres de equipos
   """
   def sugerir_equipos_balanceados(personas, obtener_tema_fn, num_equipos, prefijo_nombre \\ "Equipo") do
     # Agrupar por tema

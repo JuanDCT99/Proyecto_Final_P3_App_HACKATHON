@@ -237,5 +237,4 @@ defmodule SistemaComandos do
 end
 
 SistemaComandos.iniciar()
-# Para ejecutar:
-# SistemaComandos.iniciar()
+

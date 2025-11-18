@@ -92,7 +92,7 @@ defmodule ProyectoFinal.Domain.Mentor do
   def agregar_retroalimentacion(mentor, equipo, tipo, comentario, calificacion \\ nil) do
     nueva_retro = %{
       equipo: equipo,
-      tipo: tipo,  # :positiva, :constructiva, :sugerencia
+      tipo: tipo,
       comentario: comentario,
       calificacion: calificacion,
       fecha: DateTime.utc_now()
@@ -165,7 +165,7 @@ defmodule ProyectoFinal.Domain.Mentor do
       {:ok, contenido} ->
         contenido
         |> String.split("\n", trim: true)
-        |> Enum.drop(1) # Ignorar la línea del encabezado
+        |> Enum.drop(1)
         |> Enum.map(fn linea ->
           case String.split(linea, ",") do
             [nombre, identificacion, celular, edad, equipo] ->
@@ -182,7 +182,6 @@ defmodule ProyectoFinal.Domain.Mentor do
         end)
         |> Enum.reject(&is_nil/1)
       {:error, _reason} ->
-        # IO.puts("Error al leer el archivo #{nombre_archivo}, se creará uno nuevo.")
         []
     end
   end

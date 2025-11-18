@@ -1,5 +1,4 @@
 #Logica principal del proyecto
-#Logica principal del proyecto
 
 defmodule ProyectoFinal.Hackaton do
   @moduledoc"""
@@ -279,8 +278,6 @@ end
         end
     end
   end
-
-  # ----- Nuevos handlers para consultas / mentoring -----
 
   # Enviar una consulta: se solicita remitente y el texto (mensaje ya llega desde el comando)
   defp handle_enviar_consulta(nombre_equipo, mensaje) do

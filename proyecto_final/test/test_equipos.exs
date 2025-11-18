@@ -61,8 +61,7 @@ defmodule ProyectoFinal.Test.EquipoTest do
       # Mock del CSVAdapter
       Application.put_env(:proyecto_final, :csv_adapter, MockCSVAdapter)
 
-      # Esta función debería llamar al adapter con el formato correcto
-      # Verificamos que se formatea correctamente
+
       [equipo1, equipo2] = equipos
 
       # Verificar que los integrantes se unan con ";"
@@ -90,8 +89,7 @@ defmodule ProyectoFinal.Test.EquipoTest do
     end
 
     test "lee y parsea equipos correctamente desde CSV válido" do
-      # Para probar esto necesitas mockear Adapters.CSVAdapter
-      # Aquí simulo lo que debería retornar
+ 
 
       equipos = [
         %Equipo{nombre: "Equipo Alpha", groupID: "G001", integrantes: ["Juan", "María", "Pedro"]},

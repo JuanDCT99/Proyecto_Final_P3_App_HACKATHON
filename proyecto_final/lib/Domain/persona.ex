@@ -5,8 +5,6 @@ defmodule ProyectoFinal.Domain.Persona do
 
   defstruct nombre: "", identificacion: "", edad: "", equipo: "", tema: ""
 
-
-
   def crear_Usuario() do
     nombre = Funcional.input("Ingrese su nombre: ", :string)
     identificacion = Funcional.input("Ingrese su identificacion: ", :string)

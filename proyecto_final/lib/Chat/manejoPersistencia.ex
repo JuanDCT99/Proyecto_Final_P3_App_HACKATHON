@@ -12,10 +12,6 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
   @usuarios_salas_csv "priv/chat_usuarios_salas.csv"
   @backup_dir "priv/backups"
 
-  # ============================================================
-  # FUNCIONES DE BACKUP Y RESTAURACIÓN
-  # ============================================================
-
   @doc """
   Crea un backup completo del estado del chat.
   """
@@ -26,7 +22,6 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
 
     File.mkdir_p!(backup_path)
 
-    # Copiar archivos de datos
     archivos = [
       {@mensajes_path, "mensajes.bin"},
       {@salas_path, "salas.bin"},
@@ -136,10 +131,6 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
       {:error, "Backup no encontrado: #{nombre_backup}"}
     end
   end
-
-  # ============================================================
-  # REPORTES Y ESTADÍSTICAS
-  # ============================================================
 
   @doc """
   Genera un reporte completo del estado del chat.
@@ -316,16 +307,6 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
 
   Opcionalmente, puede crear un backup antes de realizar la limpieza.
 
-  ## Opciones
-
-    * `:dias` - El número de días. Los mensajes más antiguos que esto serán eliminados.
-      Por defecto es `30`.
-    * `:backup` - Si es `true`, crea un backup antes de la limpieza. Por defecto es `false`.
-
-  ## Ejemplos
-
-      iex> PersistenceManager.limpiar_datos_antiguos(dias: 60, backup: true)
-
   """
   def limpiar_datos_antiguos(opts) do
     dias = Keyword.get(opts, :dias, 30)
@@ -358,9 +339,7 @@ defmodule ProyectoFinal.Chat.PersistenceManager do
         {:ok, %{eliminados: 0, restantes: 0}}
     end
   end
-  # ============================================================
-  # FUNCIONES PRIVADAS
-  # ============================================================
+ 
 
   defp verificar_archivos_persistencia() do
     archivos = [
